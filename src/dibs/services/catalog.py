@@ -12,6 +12,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.identity import Identity
+from ..db import rows_to_dict
 from ..enums import IssueStatus, ReservationStatus, ScopeKind, Severity, Tier
 from ..errors import Conflict, NotFound
 from ..models import (
@@ -145,7 +146,7 @@ async def _principal_names(session: AsyncSession, subjects: set[str]) -> dict[st
     rows = await session.execute(
         select(Principal.subject, Principal.display_name).where(Principal.subject.in_(subjects))
     )
-    return dict(rows.all())
+    return rows_to_dict(rows)
 
 
 async def _node_counts(
@@ -158,7 +159,7 @@ async def _node_counts(
         .where(InterlockNode.equipment_id.in_(equipment_ids))
         .group_by(InterlockNode.equipment_id)
     )
-    return dict(rows.all())
+    return rows_to_dict(rows)
 
 
 def _row(

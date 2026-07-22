@@ -8,6 +8,7 @@ import base64
 import hashlib
 import json
 import secrets
+from typing import Any, cast
 from urllib.parse import urlencode
 
 import httpx
@@ -47,7 +48,7 @@ async def clear_flow(state: str) -> None:
 
 
 async def _discovery(settings: Settings) -> dict:
-    issuer = settings.oidc_issuer.rstrip("/")
+    issuer = cast(str, settings.oidc_issuer).rstrip("/")
     async with httpx.AsyncClient(timeout=10) as client:
         resp = await client.get(f"{issuer}/.well-known/openid-configuration")
         resp.raise_for_status()
@@ -105,7 +106,7 @@ async def validate_id_token(settings: Settings, id_token: str, nonce: str) -> Id
         jwks = resp.json()
     header = jwt.get_unverified_header(id_token)
     key = _select_jwk(jwks, header["kid"])
-    public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key))
+    public_key = cast(Any, jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(key)))
     try:
         claims = jwt.decode(
             id_token,

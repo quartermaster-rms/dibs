@@ -121,7 +121,10 @@ async def caller_abilities(
     grants = await _actor_covering(
         session, identity.subject, ScopeKind.ITEM, equipment_id, str(class_id)
     )
-    flags = actor_flags_for_target(grants, ScopeKind.ITEM, str(equipment_id), str(class_id)) or GrantFlags()
+    flags = (
+        actor_flags_for_target(grants, ScopeKind.ITEM, str(equipment_id), str(class_id))
+        or GrantFlags()
+    )
     return {
         "can_promote": flags.can_promote,
         "can_grant_superuser": flags.can_grant_superuser,

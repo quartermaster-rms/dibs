@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from typing import Any
 from urllib.parse import urlparse
 
 from ..config import Settings
@@ -15,7 +16,7 @@ class MqttPublisher:
         self.url = settings.mqtt_url
         self.prefix = settings.mqtt_topic_prefix
         self.tls_ca = settings.mqtt_tls_ca
-        self._client = None
+        self._client: Any = None
 
     @property
     def enabled(self) -> bool:
@@ -30,7 +31,7 @@ class MqttPublisher:
         client = mqtt.Client()
         if self.tls_ca:
             client.tls_set(ca_certs=self.tls_ca)
-        client.connect(parsed.hostname, parsed.port or 8883)
+        client.connect(str(parsed.hostname), parsed.port or 8883)
         client.loop_start()
         self._client = client
 

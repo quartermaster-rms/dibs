@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.identity import Identity
 from ..config import get_settings
+from ..db import rows_to_dict
 from ..enums import ReservationStatus
 from ..errors import Forbidden, NotFound, ValidationFailed, named_error
 from ..models import Principal, Reservation
@@ -200,4 +201,4 @@ async def _names(session: AsyncSession, subjects: set[str]) -> dict[str, str]:
     rows = await session.execute(
         select(Principal.subject, Principal.display_name).where(Principal.subject.in_(subjects))
     )
-    return dict(rows.all())
+    return rows_to_dict(rows)

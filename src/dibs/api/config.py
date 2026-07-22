@@ -1,4 +1,5 @@
 """Public client bootstrap config (no secrets)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

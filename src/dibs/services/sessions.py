@@ -6,6 +6,7 @@ reservations and never touches them."""
 from __future__ import annotations
 
 import uuid
+from typing import cast
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -111,7 +112,7 @@ async def disable(session: AsyncSession, identity: Identity, equipment_id: uuid.
     live.end_cause = cause
     await session.flush()
     if cause == EndCause.ADMIN:
-        equipment = await session.get(Equipment, equipment_id)
+        equipment = cast(Equipment, await session.get(Equipment, equipment_id))
         await notify(
             session,
             live.user_id,

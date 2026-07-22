@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
+from typing import cast
 
 from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -25,7 +26,7 @@ async def sweep_completed(session: AsyncSession, now: datetime | None = None) ->
         .where(Reservation.status == ReservationStatus.BOOKED, Reservation.ends_at <= now)
         .values(status=ReservationStatus.COMPLETED)
     )
-    return result.rowcount
+    return cast(int, result.rowcount)  # type: ignore[attr-defined]
 
 
 async def admin_subjects(session: AsyncSession) -> list[str]:
@@ -57,7 +58,7 @@ async def detect_offline(session: AsyncSession, now: datetime | None = None) -> 
             NODE_OFFLINE.inc()
             if admins is None:
                 admins = await admin_subjects(session)
-            equipment = await session.get(Equipment, node.equipment_id)
+            equipment = cast(Equipment, await session.get(Equipment, node.equipment_id))
             for admin in admins:
                 await notify(
                     session, admin, f"Interlock node '{node.name}' on {equipment.name} is offline."

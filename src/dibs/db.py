@@ -42,6 +42,11 @@ async def get_session() -> AsyncIterator[AsyncSession]:
             raise
 
 
+def rows_to_dict(result: object) -> dict:
+    """dict() from a SQLAlchemy Result of 2-column rows (typed for mypy)."""
+    return dict(result.all())  # type: ignore[attr-defined]
+
+
 async def dispose_engine() -> None:
     global _engine, _sessionmaker
     if _engine is not None:

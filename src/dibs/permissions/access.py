@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass
+from typing import cast
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -118,7 +119,7 @@ async def load_access(session: AsyncSession, identity: Identity, equipment_id: u
     equipment = await session.get(Equipment, equipment_id)
     if equipment is None:
         raise NotFound("equipment not found")
-    klass = await session.get(EquipmentClass, equipment.class_id)
+    klass = cast(EquipmentClass, await session.get(EquipmentClass, equipment.class_id))
     dibs_gate = set(await get_setting(session, "dibs_department_groups"))
     item_tier, class_tier = await _grant_tiers(
         session, identity.subject, equipment_id, equipment.class_id

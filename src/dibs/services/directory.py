@@ -10,6 +10,7 @@ from datetime import datetime
 from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from ..db import rows_to_dict
 from ..enums import ReservationStatus, ScopeKind, Tier
 from ..models import Audit, Equipment, EquipmentClass, Principal, Reservation, RoleGrant, Session
 from ..timeutil import now_utc, overlap_seconds, to_wire
@@ -28,8 +29,8 @@ async def list_people(session: AsyncSession) -> list[dict]:
         .scalars()
         .all()
     )
-    eq_names = dict((await session.execute(select(Equipment.id, Equipment.name))).all())
-    cls_names = dict((await session.execute(select(EquipmentClass.id, EquipmentClass.name))).all())
+    eq_names = rows_to_dict(await session.execute(select(Equipment.id, Equipment.name)))
+    cls_names = rows_to_dict(await session.execute(select(EquipmentClass.id, EquipmentClass.name)))
     by_subject: dict[str, list] = defaultdict(list)
     for g in grants:
         name = (

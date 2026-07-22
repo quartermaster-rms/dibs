@@ -6,7 +6,9 @@ touches a running session."""
 from __future__ import annotations
 
 import uuid
+from collections.abc import Sequence
 from pathlib import Path
+from typing import cast
 
 import anyio
 from fastapi import UploadFile
@@ -15,6 +17,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.identity import Identity
 from ..config import get_settings
+from ..db import rows_to_dict
 from ..enums import IssueStatus, ReservationStatus, Severity, StatusColor
 from ..errors import NotFound
 from ..models import (
@@ -36,7 +39,7 @@ async def _color(session: AsyncSession, equipment_id: uuid.UUID) -> StatusColor:
         .where(IssueReport.equipment_id == equipment_id, IssueReport.status == IssueStatus.OPEN)
         .group_by(IssueReport.severity)
     )
-    counts = dict(rows.all())
+    counts = rows_to_dict(rows)
     if counts.get(Severity.FATAL, 0) > 0:
         return StatusColor.RED
     if counts.get(Severity.WARNING, 0) > 0:
@@ -55,7 +58,7 @@ async def _notify_transition(
         message = "is back in service"
     else:
         return
-    equipment = await session.get(Equipment, equipment_id)
+    equipment = cast(Equipment, await session.get(Equipment, equipment_id))
     subjects = (
         await session.execute(
             select(Reservation.user_id)
@@ -77,7 +80,7 @@ async def _names(session: AsyncSession, subjects: set[str]) -> dict[str, str]:
     rows = await session.execute(
         select(Principal.subject, Principal.display_name).where(Principal.subject.in_(subjects))
     )
-    return dict(rows.all())
+    return rows_to_dict(rows)
 
 
 def _summary(issue: IssueReport, last_update_at, name: str | None) -> dict:
@@ -104,7 +107,7 @@ async def _last_updates(session: AsyncSession, issue_ids: list[uuid.UUID]) -> di
         .where(IssueUpdate.issue_id.in_(issue_ids))
         .group_by(IssueUpdate.issue_id)
     )
-    return dict(rows.all())
+    return rows_to_dict(rows)
 
 
 async def file_issue(
@@ -286,7 +289,7 @@ async def list_all(
     return await _serialize_list(session, issues)
 
 
-async def _serialize_list(session: AsyncSession, issues: list[IssueReport]) -> list[dict]:
+async def _serialize_list(session: AsyncSession, issues: Sequence[IssueReport]) -> list[dict]:
     last = await _last_updates(session, [i.id for i in issues])
     names = await _names(session, {i.reporter_id for i in issues})
     return [_summary(i, last.get(i.id), names.get(i.reporter_id)) for i in issues]

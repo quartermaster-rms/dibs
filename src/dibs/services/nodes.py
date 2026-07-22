@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import uuid
 from datetime import timedelta
+from typing import cast
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,7 +41,7 @@ async def _require_enable_gated(session: AsyncSession, equipment_id: uuid.UUID) 
     equipment = await session.get(Equipment, equipment_id)
     if equipment is None:
         raise NotFound("equipment not found")
-    klass = await session.get(EquipmentClass, equipment.class_id)
+    klass = cast(EquipmentClass, await session.get(EquipmentClass, equipment.class_id))
     if not is_enable_gated(equipment.requires_enable, klass.requires_enable):
         raise named_error("enable_not_supported", "equipment is not enable-gated")
 
