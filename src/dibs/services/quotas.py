@@ -2,6 +2,7 @@
 of the full booked interval); usage is checked at Enable only (headroom > 0) and
 never mid-session. Admins are exempt; users and superusers are quota'd
 identically. Windows are boundary-aligned in PLATFORM_TZ."""
+
 from __future__ import annotations
 
 import uuid
@@ -133,8 +134,12 @@ async def check_reserve_quota(
         if consumed > limit:
             raise named_error(
                 "quota_exceeded",
-                details={"quota_type": "reserve", "window": window.value,
-                         "limit_hours": str(limit), "consumed_hours": str(consumed)},
+                details={
+                    "quota_type": "reserve",
+                    "window": window.value,
+                    "limit_hours": str(limit),
+                    "consumed_hours": str(consumed),
+                },
             )
 
 
@@ -156,8 +161,12 @@ async def check_usage_quota(
         if consumed >= limit:
             raise named_error(
                 "quota_exceeded",
-                details={"quota_type": "usage", "window": window.value,
-                         "limit_hours": str(limit), "consumed_hours": str(consumed)},
+                details={
+                    "quota_type": "usage",
+                    "window": window.value,
+                    "limit_hours": str(limit),
+                    "consumed_hours": str(consumed),
+                },
             )
 
 

@@ -3,6 +3,7 @@ BOTH dimensions (principal user>group>everyone AND target item>class); otherwise
 matching policies tie and the lowest limit binds. Every hard_cap policy applies
 additionally (guide/SPEC 'ties take the lowest limit; every hard_cap also
 applies')."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

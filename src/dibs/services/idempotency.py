@@ -2,6 +2,7 @@
 (caller, key) pair is stored and replayed on retries. Authorization is
 re-evaluated on every attempt (it happens in the route's dependencies, before
 any replay), so a stored result is never a standing permission."""
+
 from __future__ import annotations
 
 import uuid

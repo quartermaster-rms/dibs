@@ -12,6 +12,7 @@ from typing import Any
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 
@@ -138,7 +139,15 @@ def named_error(
     return DibsError(message or default, code=code, status_code=status, details=details)
 
 
+async def integrity_error_handler(_: Request, exc: IntegrityError) -> JSONResponse:
+    sqlstate = getattr(getattr(exc, "orig", None), "sqlstate", None)
+    if sqlstate == "23514":  # check_violation (e.g. an enable-gating trigger)
+        return _json(422, "domain_error", "operation violates a data rule")
+    return _json(409, "conflict", "operation conflicts with existing data")
+
+
 def register_error_handlers(app: Any) -> None:
     app.add_exception_handler(DibsError, dibs_error_handler)
     app.add_exception_handler(StarletteHTTPException, http_exception_handler)
     app.add_exception_handler(RequestValidationError, validation_exception_handler)
+    app.add_exception_handler(IntegrityError, integrity_error_handler)

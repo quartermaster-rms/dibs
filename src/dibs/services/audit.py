@@ -1,5 +1,6 @@
 """Append-only audit trail: every action is recorded (guide §5 shape). Never
 updated or deleted; surfaced to admins on the Audit page."""
+
 from __future__ import annotations
 
 import uuid

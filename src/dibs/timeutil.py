@@ -17,6 +17,13 @@ def now_utc() -> datetime:
     return datetime.now(UTC)
 
 
+def to_wire(dt: datetime | None) -> str | None:
+    """UTC ISO-8601 with a Z suffix and second precision (guide §1)."""
+    if dt is None:
+        return None
+    return dt.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
 def zone(tz: str) -> ZoneInfo:
     return ZoneInfo(tz)
 
