@@ -64,6 +64,10 @@ class Settings(BaseSettings):
     # --- Idempotency ---
     idempotency_ttl_seconds: int = 60 * 60 * 24
 
+    # --- Background loops ---
+    worker_interval_s: int = 30
+    scheduler_interval_s: int = 60
+
     @property
     def stub_login(self) -> bool:
         return self.auth_mode == "stub"
