@@ -161,14 +161,16 @@ async def make_node(
     equipment_id: uuid.UUID,
     enabled: bool = True,
     fail_state: FailState = FailState.FAIL_ENABLED,
-    key_hash: str = "hash",
+    key: str = "node-key",
     poll_interval_s: int = 5,
     heartbeat_interval_s: int = 30,
     name: str = "node",
 ):
+    from dibs.device.keys import hash_key
+
     n = InterlockNode(
         equipment_id=equipment_id,
-        key_hash=key_hash,
+        key_hash=hash_key(key),
         fail_state=fail_state,
         poll_interval_s=poll_interval_s,
         heartbeat_interval_s=heartbeat_interval_s,

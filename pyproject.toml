@@ -63,6 +63,9 @@ filterwarnings = ["error::DeprecationWarning:dibs.*"]
 branch = true
 source = ["dibs"]
 omit = ["src/dibs/migrations/*"]
+# SQLAlchemy async hops into a greenlet; without this, coverage loses the
+# continuation after every `await session.*` call.
+concurrency = ["thread", "greenlet"]
 
 [tool.coverage.report]
 show_missing = true

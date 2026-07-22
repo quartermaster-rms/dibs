@@ -10,6 +10,7 @@ from .catalog import router as catalog_router
 from .grants import router as grants_router
 from .issues import router as issues_router
 from .me import router as me_router
+from .nodes import router as nodes_router
 from .people import router as people_router
 from .reservations import router as reservations_router
 from .sessions import router as sessions_router
@@ -25,5 +26,6 @@ def build_api_router() -> APIRouter:
     api.include_router(issues_router, tags=["issues"])
     api.include_router(grants_router, tags=["grants"])
     api.include_router(people_router, tags=["people"])
+    api.include_router(nodes_router, tags=["nodes"])
     api.include_router(admin_router, tags=["admin"])
     return api

@@ -8,6 +8,7 @@ from __future__ import annotations
 import uuid
 from pathlib import Path
 
+import anyio
 from fastapi import UploadFile
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -159,11 +160,17 @@ async def add_photo(
     issue = await session.get(IssueReport, issue_id)
     if issue is None:
         raise NotFound("issue not found")
-    uploads = Path(get_settings().uploads_dir)
-    uploads.mkdir(parents=True, exist_ok=True)
     suffix = Path(upload.filename or "").suffix
     stored = f"{uuid.uuid4().hex}{suffix}"
-    (uploads / stored).write_bytes(await upload.read())
+    content = await upload.read()
+    uploads_dir = get_settings().uploads_dir
+
+    def _persist() -> None:
+        uploads = Path(uploads_dir)
+        uploads.mkdir(parents=True, exist_ok=True)
+        (uploads / stored).write_bytes(content)
+
+    await anyio.to_thread.run_sync(_persist)
     photo = IssuePhoto(issue_id=issue_id, update_id=update_id, path=stored)
     session.add(photo)
     await session.flush()

@@ -57,6 +57,15 @@ async def client(app, clean_db):
 
 
 @pytest_asyncio.fixture
+async def device_client(clean_db):
+    from dibs.device.app import create_device_app
+
+    transport = ASGITransport(app=create_device_app())
+    async with AsyncClient(transport=transport, base_url="http://device") as c:
+        yield c
+
+
+@pytest_asyncio.fixture
 def login(client):
     """Stub-login the shared client as a subject; sets its CSRF header."""
 
