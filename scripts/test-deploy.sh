@@ -14,7 +14,9 @@ DEVICE_PORT="${DIBS_TESTDEPLOY_DEVICE_PORT:-18443}"
 ENVFILE="$DEPLOY/host.env"
 BACKUP=""
 
-compose() { docker compose -p "$PROJECT" -f "$DEPLOY/docker-compose.yml" "$@"; }
+compose() {
+  docker compose -p "$PROJECT" --env-file "$ENVFILE" -f "$DEPLOY/docker-compose.yml" "$@"
+}
 
 cleanup() {
   compose down -v --remove-orphans >/dev/null 2>&1 || true
@@ -89,7 +91,10 @@ curl -fsSk "$DEV/healthz" | grep -q ok || fail "device healthz"
 
 echo ">> postgres/redis stay internal"
 for svc in postgres redis; do
-  compose port "$svc" 5432 >/dev/null 2>&1 && fail "$svc is published" || true
+  cid="$(compose ps -q "$svc")"
+  if docker inspect --format '{{json .NetworkSettings.Ports}}' "$cid" | grep -q HostPort; then
+    fail "$svc is published to the host"
+  fi
 done
 
 echo ">> OK: production image verified"

@@ -20,8 +20,10 @@ case "$role" in
     exec python -m dibs.workers.scheduler
     ;;
   device)
+    # Always listen on the fixed internal port 8443; compose publishes
+    # ${DEVICE_PORT} -> 8443 on the host.
     exec uvicorn dibs.device.app:app \
-      --host 0.0.0.0 --port "${DEVICE_PORT:-8443}" \
+      --host 0.0.0.0 --port 8443 \
       --ssl-certfile "${DEVICE_TLS_CERT}" --ssl-keyfile "${DEVICE_TLS_KEY}"
     ;;
   *)
