@@ -37,7 +37,7 @@ async def clean_db():
 
 
 @pytest_asyncio.fixture
-async def db_session():
+async def db_session(clean_db):
     async with get_sessionmaker()() as session:
         yield session
 

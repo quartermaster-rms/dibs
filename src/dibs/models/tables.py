@@ -43,7 +43,16 @@ SUBJECT = String(255)
 
 
 def _enum(py, name):  # noqa: ANN001
-    return Enum(py, native_enum=False, length=32, name=name, validate_strings=True)
+    # Persist the enum *values* (lowercase strings), matching the wire format and
+    # the raw SQL predicates in migrations.
+    return Enum(
+        py,
+        native_enum=False,
+        length=32,
+        name=name,
+        validate_strings=True,
+        values_callable=lambda enum: [m.value for m in enum],
+    )
 
 
 class Location(TimestampMixin, Base):

@@ -3,11 +3,26 @@
 from __future__ import annotations
 
 import uuid
+from datetime import datetime
+from decimal import Decimal
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from dibs.enums import ScopeKind, Tier
-from dibs.models import Equipment, EquipmentClass, Location, RoleGrant
+from dibs.enums import (
+    QuotaType,
+    QuotaWindow,
+    ReservationStatus,
+    ScopeKind,
+    Tier,
+)
+from dibs.models import (
+    Equipment,
+    EquipmentClass,
+    Location,
+    QuotaPolicy,
+    Reservation,
+    RoleGrant,
+)
 
 
 async def make_location(session: AsyncSession, building: str = "Building A", room: str = "101"):
@@ -86,3 +101,49 @@ async def make_grant(
     session.add(g)
     await session.flush()
     return g
+
+
+async def make_reservation(
+    session: AsyncSession,
+    equipment_id: uuid.UUID,
+    user_id: str,
+    starts_at: datetime,
+    ends_at: datetime,
+    status: ReservationStatus = ReservationStatus.BOOKED,
+    created_by: str | None = None,
+):
+    r = Reservation(
+        equipment_id=equipment_id,
+        user_id=user_id,
+        created_by=created_by or user_id,
+        starts_at=starts_at,
+        ends_at=ends_at,
+        status=status,
+    )
+    session.add(r)
+    await session.flush()
+    return r
+
+
+async def make_quota_policy(
+    session: AsyncSession,
+    quota_type: QuotaType,
+    principal: str,
+    target_kind: ScopeKind,
+    target_id: uuid.UUID,
+    window: QuotaWindow,
+    limit_hours: float,
+    hard_cap: bool = False,
+):
+    p = QuotaPolicy(
+        quota_type=quota_type,
+        principal=principal,
+        target_kind=target_kind,
+        target_id=target_id,
+        window=window,
+        limit_hours=Decimal(str(limit_hours)),
+        hard_cap=hard_cap,
+    )
+    session.add(p)
+    await session.flush()
+    return p
