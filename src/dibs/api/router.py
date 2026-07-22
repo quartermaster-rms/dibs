@@ -1,4 +1,5 @@
 """Assembles the user-plane API under /api."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter

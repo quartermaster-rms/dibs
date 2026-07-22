@@ -16,7 +16,6 @@ from dibs.config import Settings
 from dibs.errors import Forbidden, Unauthenticated
 from dibs.models import Principal
 
-
 # --- Identity helpers (unit) ---
 
 
@@ -147,9 +146,7 @@ async def test_require_admin_unit():
 def _request(cookies=None, headers=None, method="POST") -> Request:
     raw_headers = [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()]
     if cookies:
-        raw_headers.append(
-            (b"cookie", "; ".join(f"{k}={v}" for k, v in cookies.items()).encode())
-        )
+        raw_headers.append((b"cookie", "; ".join(f"{k}={v}" for k, v in cookies.items()).encode()))
     return Request(
         {"type": "http", "method": method, "headers": raw_headers, "path": "/", "query_string": b""}
     )

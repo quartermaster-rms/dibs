@@ -1,6 +1,7 @@
 """The local directory cache: identity captured from each caller's token on
 login. Backs the People directory and grant rosters; dibs never queries the
 external directory."""
+
 from __future__ import annotations
 
 from sqlalchemy.dialects.postgresql import insert

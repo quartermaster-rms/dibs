@@ -1,4 +1,5 @@
 """The authenticated caller's identity and coarse Keycloak roles (README §2)."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

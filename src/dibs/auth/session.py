@@ -3,6 +3,7 @@
 The session cookie is HTTP-only + SameSite=Lax; CSRF is a double-submit token
 required on every state-changing request (IMPLEMENTATION-GUIDE §3).
 """
+
 from __future__ import annotations
 
 import json

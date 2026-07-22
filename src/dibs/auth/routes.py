@@ -1,4 +1,5 @@
 """Authentication endpoints (mounted under /api/auth)."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
@@ -63,9 +64,7 @@ async def stub_login(
 
 
 @router.post("/logout", status_code=204)
-async def logout(
-    request: Request, _: Identity = Depends(current_identity_csrf)
-) -> Response:
+async def logout(request: Request, _: Identity = Depends(current_identity_csrf)) -> Response:
     await delete_session(request.state.session_id)
     response = Response(status_code=204)
     clear_session_cookies(response)

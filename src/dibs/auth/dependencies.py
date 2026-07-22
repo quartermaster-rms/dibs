@@ -1,6 +1,7 @@
 """FastAPI auth dependencies. Fail-closed: any missing/invalid session -> 401,
 insufficient role -> 403. CSRF is required on every state-changing request.
 """
+
 from __future__ import annotations
 
 import secrets

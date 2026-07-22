@@ -1,4 +1,5 @@
 """The caller's own view: identity + standing."""
+
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
