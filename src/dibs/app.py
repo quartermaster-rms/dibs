@@ -6,6 +6,7 @@ from fastapi import FastAPI
 from fastapi.responses import Response
 
 from .api.health import router as health_router
+from .api.router import build_api_router
 from .config import Settings, get_settings
 from .context import RequestIdMiddleware
 from .errors import register_error_handlers
@@ -27,6 +28,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     register_error_handlers(app)
 
     app.include_router(health_router)
+    app.include_router(build_api_router())
 
     async def metrics(_: object) -> Response:
         return metrics_response()
