@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Request
-from fastapi.responses import JSONResponse, Response
+from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import get_settings
 from ..db import get_session
-from ..errors import NotFound
+from ..errors import NotFound, ValidationFailed
 from ..services.principals import upsert_principal
+from . import oidc
 from .dependencies import current_identity_csrf
 from .identity import Identity
 from .session import (
@@ -39,12 +40,11 @@ def _identity_payload(identity: Identity, csrf_token: str) -> dict[str, object]:
     }
 
 
-async def _establish(identity: Identity, session: AsyncSession) -> JSONResponse:
+async def _apply_session(response: Response, identity: Identity, session: AsyncSession) -> str:
     await upsert_principal(session, identity)
     session_id, csrf_token = await create_session(identity)
-    response = JSONResponse(_identity_payload(identity, csrf_token))
     set_session_cookies(response, session_id, csrf_token)
-    return response
+    return csrf_token
 
 
 @router.post("/stub-login")
@@ -60,7 +60,42 @@ async def stub_login(
         email=body.email,
         groups=tuple(body.groups),
     )
-    return await _establish(identity, session)
+    await upsert_principal(session, identity)
+    session_id, csrf_token = await create_session(identity)
+    response = JSONResponse(_identity_payload(identity, csrf_token))
+    set_session_cookies(response, session_id, csrf_token)
+    return response
+
+
+@router.get("/login")
+async def oidc_login() -> RedirectResponse:
+    settings = get_settings()
+    if settings.auth_mode != "oidc":
+        raise NotFound("not found")
+    verifier, challenge = oidc.generate_pkce()
+    state = oidc.new_state()
+    nonce = oidc.new_state()
+    await oidc.store_flow(state, verifier, nonce)
+    url = await oidc.build_authorize_url(settings, state, challenge, nonce)
+    return RedirectResponse(url, status_code=307)
+
+
+@router.get("/callback")
+async def oidc_callback(
+    code: str, state: str, session: AsyncSession = Depends(get_session)
+) -> RedirectResponse:
+    settings = get_settings()
+    if settings.auth_mode != "oidc":
+        raise NotFound("not found")
+    flow = await oidc.load_flow(state)
+    if flow is None:
+        raise ValidationFailed("invalid or expired authorization state", code="invalid_state")
+    await oidc.clear_flow(state)
+    tokens = await oidc.exchange_code(settings, code, flow["code_verifier"])
+    identity = await oidc.validate_id_token(settings, tokens["id_token"], flow["nonce"])
+    response = RedirectResponse(settings.oidc_post_login_redirect, status_code=307)
+    await _apply_session(response, identity, session)
+    return response
 
 
 @router.post("/logout", status_code=204)

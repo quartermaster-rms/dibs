@@ -35,6 +35,8 @@ class Settings(BaseSettings):
     oidc_client_id: str | None = None
     oidc_client_secret: str | None = None
     oidc_redirect_url: str | None = None
+    oidc_groups_claim: str = "groups"
+    oidc_post_login_redirect: str = "/"
     public_base_url: str | None = None
 
     # --- Session cookie ---
