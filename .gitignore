@@ -1,0 +1,42 @@
+# AI / agent workspace
+.agent/
+.claude/
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.hypothesis/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/coverage/
+.vite/
+npm-debug.log*
+yarn-error.log*
+
+# Deployment secrets & runtime state (only host.env.example is tracked)
+deploy/host.env
+uploads/
+*.log
