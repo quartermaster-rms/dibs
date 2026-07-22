@@ -18,7 +18,7 @@ from ..config import get_settings
 from ..enums import ReservationStatus
 from ..errors import Forbidden, NotFound, ValidationFailed, named_error
 from ..models import Principal, Reservation
-from ..permissions.access import load_access
+from ..permissions.access import load_access, require_reachable
 from ..timeutil import add_days_platform, now_utc, to_wire
 from .settings import get_setting
 
@@ -161,7 +161,7 @@ async def list_for_equipment(
     from_: datetime | None,
     to: datetime | None,
 ) -> list[dict]:
-    await load_access(session, identity, equipment_id)  # reachability
+    await require_reachable(session, identity, equipment_id)
     stmt = select(Reservation).where(
         Reservation.equipment_id == equipment_id,
         Reservation.status != ReservationStatus.CANCELLED,

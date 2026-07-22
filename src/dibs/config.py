@@ -45,8 +45,9 @@ class Settings(BaseSettings):
     cookie_domain: str | None = None
     session_ttl_seconds: int = 60 * 60 * 12
 
-    # --- Storage ---
+    # --- Storage / static ---
     uploads_dir: str = "/data/uploads"
+    static_dir: str = "frontend/dist"
 
     # --- Device plane ---
     device_port: int = 8443

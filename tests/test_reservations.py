@@ -3,7 +3,13 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime, timedelta
 
-from tests.factories import make_equipment, make_grant, make_quota_policy, make_reservation
+from tests.factories import (
+    make_class,
+    make_equipment,
+    make_grant,
+    make_quota_policy,
+    make_reservation,
+)
 
 from dibs.enums import QuotaType, QuotaWindow, ScopeKind, Tier
 
@@ -163,6 +169,14 @@ async def test_reserve_quota(client, db_session, login):
     assert (await _book(client, eq.id, hour=17, dur=90)).status_code == 201  # 1.5h
     r = await _book(client, eq.id, hour=19, dur=60)  # +1h -> 2.5h > 2
     assert r.status_code == 422 and r.json()["error"]["code"] == "quota_exceeded"
+
+
+async def test_reservation_list_respects_department_gate(client, db_session, login):
+    gated = await make_class(db_session, name="Gated-res", department_groups=["group-eng"])
+    eq = await make_equipment(db_session, klass=gated)
+    await db_session.commit()
+    await login(subject="outsider", groups=("group-hr",))
+    assert (await client.get(f"/api/equipment/{eq.id}/reservations")).status_code == 404
 
 
 async def test_idempotent_booking(client, db_session, login):

@@ -25,7 +25,7 @@ from ..models import (
     Principal,
     Reservation,
 )
-from ..permissions.access import load_access
+from ..permissions.access import require_reachable
 from ..timeutil import now_utc, to_wire
 from .notifications import notify
 
@@ -115,7 +115,7 @@ async def file_issue(
     severity: Severity,
     description: str,
 ) -> dict:
-    await load_access(session, identity, equipment_id)  # reachability
+    await require_reachable(session, identity, equipment_id)
     before = await _color(session, equipment_id)
     issue = IssueReport(
         equipment_id=equipment_id,
@@ -138,6 +138,7 @@ async def add_update(
     issue = await session.get(IssueReport, issue_id)
     if issue is None:
         raise NotFound("issue not found")
+    await require_reachable(session, identity, issue.equipment_id)
     update = IssueUpdate(issue_id=issue_id, author_id=identity.subject, body=body)
     session.add(update)
     await session.flush()
@@ -160,6 +161,7 @@ async def add_photo(
     issue = await session.get(IssueReport, issue_id)
     if issue is None:
         raise NotFound("issue not found")
+    await require_reachable(session, identity, issue.equipment_id)
     suffix = Path(upload.filename or "").suffix
     stored = f"{uuid.uuid4().hex}{suffix}"
     content = await upload.read()
@@ -197,7 +199,7 @@ async def get_issue(session: AsyncSession, identity: Identity, issue_id: uuid.UU
     issue = await session.get(IssueReport, issue_id)
     if issue is None:
         raise NotFound("issue not found")
-    await load_access(session, identity, issue.equipment_id)  # reachability
+    await require_reachable(session, identity, issue.equipment_id)
     updates = (
         (
             await session.execute(
@@ -244,7 +246,7 @@ async def list_for_equipment(
     severity: Severity | None,
     q: str | None,
 ) -> list[dict]:
-    await load_access(session, identity, equipment_id)
+    await require_reachable(session, identity, equipment_id)
     stmt = select(IssueReport).where(IssueReport.equipment_id == equipment_id)
     if not include_closed:
         stmt = stmt.where(IssueReport.status == IssueStatus.OPEN)

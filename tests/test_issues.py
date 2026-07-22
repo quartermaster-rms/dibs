@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from tests.factories import make_class, make_equipment, make_grant, make_reservation
+from tests.factories import make_class, make_equipment, make_grant, make_issue, make_reservation
 
-from dibs.enums import ScopeKind, Tier
+from dibs.enums import ScopeKind, Severity, Tier
 
 
 async def _file(client, eq_id, title="Broken", severity="fatal", description="desc"):
@@ -111,6 +111,24 @@ async def test_list_filters_and_reachability(client, db_session, login):
     await login(subject="outsider", groups=("group-hr",))
     got = (await client.get("/api/issues")).json()
     assert len(got) == 1 and got[0]["equipment_id"] == str(eq_open.id)
+
+
+async def test_issue_reads_and_writes_respect_department_gate(client, db_session, login):
+    gated = await make_class(db_session, name="Gated-issues", department_groups=["group-eng"])
+    eq = await make_equipment(db_session, klass=gated)
+    issue = await make_issue(db_session, eq.id, severity=Severity.WARNING)
+    await db_session.commit()
+    await login(subject="outsider", groups=("group-hr",))
+    assert (await client.get(f"/api/issues/{issue.id}")).status_code == 404
+    assert (await client.get(f"/api/equipment/{eq.id}/issues")).status_code == 404
+    assert (await _file(client, eq.id, severity="warning")).status_code == 404
+    assert (
+        await client.post(f"/api/issues/{issue.id}/updates", json={"body": "hi"})
+    ).status_code == 404
+    # a department member can reach it
+    await login(subject="member", groups=("group-eng",))
+    assert (await client.get(f"/api/issues/{issue.id}")).status_code == 200
+    assert (await client.get(f"/api/equipment/{eq.id}/issues")).status_code == 200
 
 
 async def test_filing_does_not_end_session(client, db_session, login):

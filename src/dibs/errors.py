@@ -128,7 +128,6 @@ NAMED_ERRORS: dict[str, tuple[int, str]] = {
     "node_disabled": (409, "an interlock node is administratively disabled"),
     "starts_in_past": (422, "reservation must start in the future"),
     "department_gate": (403, "not a member of a required department group"),
-    "not_active": (403, "account is not active"),
 }
 
 

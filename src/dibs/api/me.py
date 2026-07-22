@@ -12,7 +12,7 @@ from ..auth.identity import Identity
 from ..db import get_session
 from ..permissions.access import load_access
 from ..permissions.deps import require_dibs_access
-from ..services import notifications, quotas
+from ..services import audit, notifications, quotas
 
 router = APIRouter()
 
@@ -52,4 +52,12 @@ async def read_notification(
     identity: Identity = Depends(current_identity_csrf),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    return await notifications.mark_read(session, identity.subject, notification_id)
+    result = await notifications.mark_read(session, identity.subject, notification_id)
+    await audit.record(
+        session,
+        actor=identity.subject,
+        action="notification.read",
+        object_type="notification",
+        object_id=notification_id,
+    )
+    return result

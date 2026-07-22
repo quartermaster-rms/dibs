@@ -9,7 +9,12 @@ from dibs.auth.identity import Identity
 from dibs.enums import ScopeKind, Tier
 from dibs.errors import DibsError, NotFound
 from dibs.models import Equipment, EquipmentClass
-from dibs.permissions.access import compute_access, load_access, reachable_equipment_ids
+from dibs.permissions.access import (
+    compute_access,
+    load_access,
+    reachable_equipment_ids,
+    require_reachable,
+)
 from dibs.permissions.deps import require_dibs_access, require_dibs_access_csrf
 from dibs.services.settings import set_setting
 
@@ -106,6 +111,17 @@ async def test_load_access_db(db_session):
 async def test_load_access_not_found(db_session):
     with pytest.raises(NotFound):
         await load_access(db_session, Identity("u", "", "", ()), uuid.uuid4())
+
+
+async def test_require_reachable(db_session):
+    klass = await make_class(db_session, department_groups=["group-eng"])
+    eq = await make_equipment(db_session, klass=klass)
+    member = Identity("m", "", "", ("group-eng",))
+    outsider = Identity("o", "", "", ("group-hr",))
+    acc = await require_reachable(db_session, member, eq.id)
+    assert acc.reachable
+    with pytest.raises(NotFound):
+        await require_reachable(db_session, outsider, eq.id)
 
 
 async def test_require_dibs_access_gate(db_session):

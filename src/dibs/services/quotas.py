@@ -16,7 +16,7 @@ from ..config import get_settings
 from ..enums import QuotaType, QuotaWindow, ReservationStatus, ScopeKind
 from ..errors import named_error
 from ..models import QuotaPolicy, Reservation, Session
-from ..timeutil import now_utc, overlap_seconds, window_bounds
+from ..timeutil import now_utc, overlap_seconds, window_bounds, window_instances
 from .quota_engine import PRINCIPAL_RANK, TARGET_RANK, PolicyMatch, binding_limit
 
 _HOUR = Decimal(3600)
@@ -128,19 +128,23 @@ async def check_reserve_quota(
         limit = binding_limit(policies)
         if limit is None:
             continue
-        wstart, wend = window_bounds(window.value, new_start, tz)
-        consumed = await reserve_consumption(session, identity.subject, wstart, wend, exclude_id)
-        consumed += _hours(overlap_seconds(new_start, new_end, wstart, wend))
-        if consumed > limit:
-            raise named_error(
-                "quota_exceeded",
-                details={
-                    "quota_type": "reserve",
-                    "window": window.value,
-                    "limit_hours": str(limit),
-                    "consumed_hours": str(consumed),
-                },
+        # Check every calendar window the new interval overlaps, not just the
+        # window containing its start (a booking may straddle a boundary).
+        for wstart, wend in window_instances(window.value, new_start, new_end, tz):
+            consumed = await reserve_consumption(
+                session, identity.subject, wstart, wend, exclude_id
             )
+            consumed += _hours(overlap_seconds(new_start, new_end, wstart, wend))
+            if consumed > limit:
+                raise named_error(
+                    "quota_exceeded",
+                    details={
+                        "quota_type": "reserve",
+                        "window": window.value,
+                        "limit_hours": str(limit),
+                        "consumed_hours": str(consumed),
+                    },
+                )
 
 
 async def check_usage_quota(

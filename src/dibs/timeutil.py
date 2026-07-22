@@ -56,6 +56,19 @@ def window_bounds(kind: WindowKind, at: datetime, tz: str) -> tuple[datetime, da
     return start.astimezone(UTC), end.astimezone(UTC)
 
 
+def window_instances(
+    kind: WindowKind, start: datetime, end: datetime, tz: str
+) -> list[tuple[datetime, datetime]]:
+    """Every calendar window (in UTC bounds) that [start, end) overlaps."""
+    result: list[tuple[datetime, datetime]] = []
+    cursor = start
+    while cursor < end:
+        wstart, wend = window_bounds(kind, cursor, tz)
+        result.append((wstart, wend))
+        cursor = wend
+    return result
+
+
 def add_days_platform(at: datetime, days: int, tz: str) -> datetime:
     """``at`` shifted by whole calendar days in PLATFORM_TZ, DST-safe, back to UTC."""
     z = zone(tz)

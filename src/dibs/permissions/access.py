@@ -103,6 +103,17 @@ async def reachable_equipment_ids(
     return {eq_id for eq_id, dept in rows if department_gate_ok(False, groups, set(dept))}
 
 
+async def require_reachable(
+    session: AsyncSession, identity: Identity, equipment_id: uuid.UUID
+) -> Access:
+    """load_access but hide equipment the caller cannot reach through the
+    department gate (a 404, indistinguishable from a missing row)."""
+    access = await load_access(session, identity, equipment_id)
+    if not access.reachable:
+        raise NotFound("equipment not found")
+    return access
+
+
 async def load_access(session: AsyncSession, identity: Identity, equipment_id: uuid.UUID) -> Access:
     equipment = await session.get(Equipment, equipment_id)
     if equipment is None:

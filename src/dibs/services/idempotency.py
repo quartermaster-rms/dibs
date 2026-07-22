@@ -6,6 +6,7 @@ any replay), so a stored result is never a standing permission."""
 from __future__ import annotations
 
 import uuid
+from datetime import timedelta
 from typing import Any
 
 from fastapi.encoders import jsonable_encoder
@@ -15,8 +16,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from starlette.requests import Request
 
+from ..config import get_settings
 from ..errors import Conflict, ValidationFailed
 from ..models import IdempotencyRecord
+from ..timeutil import now_utc
 
 IDEMPOTENCY_HEADER = "idempotency-key"
 
@@ -39,11 +42,13 @@ class Idempotency:
     async def replay(self) -> JSONResponse | None:
         if self.key is None:
             return None
+        cutoff = now_utc() - timedelta(seconds=get_settings().idempotency_ttl_seconds)
         row = (
             await self.session.execute(
                 select(IdempotencyRecord).where(
                     IdempotencyRecord.caller == self.caller,
                     IdempotencyRecord.key == self.key,
+                    IdempotencyRecord.created_at >= cutoff,
                 )
             )
         ).scalar_one_or_none()
