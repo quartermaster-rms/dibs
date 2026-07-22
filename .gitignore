@@ -38,5 +38,6 @@ yarn-error.log*
 
 # Deployment secrets & runtime state (only host.env.example is tracked)
 deploy/host.env
+deploy/tls/
 uploads/
 *.log
