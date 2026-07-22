@@ -1,0 +1,1 @@
+"""dibs — QUARTERMASTER equipment service."""
