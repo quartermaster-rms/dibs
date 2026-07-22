@@ -67,6 +67,10 @@ build:  ## Build all production images
 up:  ## Bring the stack up (needs deploy/host.env)
 	docker compose -f deploy/docker-compose.yml --env-file deploy/host.env up -d
 
+.PHONY: deploy
+deploy:  ## Deploy with bounded failed-deploy recovery (needs deploy/host.env)
+	bash deploy/deploy.sh
+
 .PHONY: down
 down:  ## Tear the stack down
 	docker compose -f deploy/docker-compose.yml down
