@@ -9,19 +9,26 @@ from decimal import Decimal
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from dibs.enums import (
+    EndCause,
+    FailState,
+    IssueStatus,
     QuotaType,
     QuotaWindow,
     ReservationStatus,
     ScopeKind,
+    Severity,
     Tier,
 )
 from dibs.models import (
     Equipment,
     EquipmentClass,
+    InterlockNode,
+    IssueReport,
     Location,
     QuotaPolicy,
     Reservation,
     RoleGrant,
+    Session,
 )
 
 
@@ -147,3 +154,69 @@ async def make_quota_policy(
     session.add(p)
     await session.flush()
     return p
+
+
+async def make_node(
+    session: AsyncSession,
+    equipment_id: uuid.UUID,
+    enabled: bool = True,
+    fail_state: FailState = FailState.FAIL_ENABLED,
+    key_hash: str = "hash",
+    poll_interval_s: int = 5,
+    heartbeat_interval_s: int = 30,
+    name: str = "node",
+):
+    n = InterlockNode(
+        equipment_id=equipment_id,
+        key_hash=key_hash,
+        fail_state=fail_state,
+        poll_interval_s=poll_interval_s,
+        heartbeat_interval_s=heartbeat_interval_s,
+        enabled=enabled,
+        name=name,
+    )
+    session.add(n)
+    await session.flush()
+    return n
+
+
+async def make_issue(
+    session: AsyncSession,
+    equipment_id: uuid.UUID,
+    reporter_id: str = "reporter",
+    severity: Severity = Severity.FATAL,
+    status: IssueStatus = IssueStatus.OPEN,
+    title: str = "Broken",
+    description: str = "",
+):
+    i = IssueReport(
+        equipment_id=equipment_id,
+        reporter_id=reporter_id,
+        title=title,
+        severity=severity,
+        description=description,
+        status=status,
+    )
+    session.add(i)
+    await session.flush()
+    return i
+
+
+async def make_session(
+    session: AsyncSession,
+    equipment_id: uuid.UUID,
+    user_id: str,
+    started_at: datetime,
+    ended_at: datetime | None = None,
+    end_cause: EndCause | None = None,
+):
+    s = Session(
+        equipment_id=equipment_id,
+        user_id=user_id,
+        started_at=started_at,
+        ended_at=ended_at,
+        end_cause=end_cause,
+    )
+    session.add(s)
+    await session.flush()
+    return s
