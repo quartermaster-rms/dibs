@@ -1,0 +1,133 @@
+from __future__ import annotations
+
+from tests.factories import make_equipment, make_grant
+
+from dibs.enums import ScopeKind, Tier
+
+
+async def test_admin_grants_and_roster(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await db_session.commit()
+    await login(subject="target", display_name="Target")  # create principal
+    await login(subject="admin", groups=("admin-dibs",))
+    r = await client.put(
+        "/api/grants",
+        json={"subject": "target", "scope_kind": "item", "scope_id": str(eq.id), "tier": "user"},
+    )
+    assert r.status_code == 200 and r.json()["tier"] == "user"
+    roster = (await client.get(f"/api/equipment/{eq.id}/grants")).json()
+    assert any(g["subject"] == "target" and g["display_name"] == "Target" for g in roster)
+    # admins never appear in a roster
+    assert all(not g.get("is_admin") for g in roster)
+    # tier=none removes the grant
+    await client.put(
+        "/api/grants",
+        json={"subject": "target", "scope_kind": "item", "scope_id": str(eq.id), "tier": "none"},
+    )
+    assert (await client.get(f"/api/equipment/{eq.id}/grants")).json() == []
+
+
+async def test_superuser_promote_and_no_escalation(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(db_session, "su", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_promote=True)
+    await db_session.commit()
+    await login(subject="target")
+    await login(subject="su")
+    # promote none -> user OK
+    r = await client.put(
+        "/api/grants",
+        json={"subject": "target", "scope_kind": "item", "scope_id": str(eq.id), "tier": "user"},
+    )
+    assert r.status_code == 200
+    # cannot grant superuser without the ability
+    r = await client.put(
+        "/api/grants",
+        json={
+            "subject": "target",
+            "scope_kind": "item",
+            "scope_id": str(eq.id),
+            "tier": "superuser",
+        },
+    )
+    assert r.status_code == 403 and r.json()["error"]["code"] == "grant_forbidden"
+
+
+async def test_escalation_blocked(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(
+        db_session, "su", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_grant_superuser=True
+    )
+    await db_session.commit()
+    await login(subject="target")
+    await login(subject="su")
+    # cannot confer promote it doesn't hold
+    r = await client.put(
+        "/api/grants",
+        json={
+            "subject": "target",
+            "scope_kind": "item",
+            "scope_id": str(eq.id),
+            "tier": "superuser",
+            "can_promote": True,
+        },
+    )
+    assert r.status_code == 403
+    # granting superuser with only abilities the actor holds is fine (explicit
+    # empty flags; the default prefill includes promote, which the actor lacks)
+    r = await client.put(
+        "/api/grants",
+        json={
+            "subject": "target",
+            "scope_kind": "item",
+            "scope_id": str(eq.id),
+            "tier": "superuser",
+            "can_promote": False,
+            "can_grant_superuser": True,
+            "can_demote": False,
+        },
+    )
+    assert r.status_code == 200
+
+
+async def test_class_grant_covers_items(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(
+        db_session, "su", ScopeKind.CLASS, eq.class_id, Tier.SUPERUSER, can_promote=True
+    )
+    await db_session.commit()
+    await login(subject="target")
+    await login(subject="su")
+    # class-scoped superuser may promote an item in the class
+    r = await client.put(
+        "/api/grants",
+        json={"subject": "target", "scope_kind": "item", "scope_id": str(eq.id), "tier": "user"},
+    )
+    assert r.status_code == 200
+
+
+async def test_cannot_affect_admin(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await db_session.commit()
+    await login(subject="adminuser", groups=("admin-dibs",))  # principal is_admin
+    await login(subject="admin", groups=("admin-dibs",))
+    r = await client.put(
+        "/api/grants",
+        json={"subject": "adminuser", "scope_kind": "item", "scope_id": str(eq.id), "tier": "user"},
+    )
+    assert r.status_code == 403 and r.json()["error"]["code"] == "grant_forbidden"
+
+
+async def test_peer_demote_setting(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(db_session, "actor", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_demote=True)
+    await make_grant(db_session, "peer", ScopeKind.ITEM, eq.id, Tier.SUPERUSER)
+    await db_session.commit()
+    await login(subject="peer")
+    await login(subject="actor")
+    body = {"subject": "peer", "scope_kind": "item", "scope_id": str(eq.id), "tier": "user"}
+    assert (await client.put("/api/grants", json=body)).status_code == 403
+    # admin enables peer-demote
+    await login(subject="admin", groups=("admin-dibs",))
+    await client.put("/api/settings", json={"delegation_allow_peer_demote": True})
+    await login(subject="actor")
+    assert (await client.put("/api/grants", json=body)).status_code == 200
