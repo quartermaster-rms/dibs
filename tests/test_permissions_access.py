@@ -9,7 +9,7 @@ from dibs.auth.identity import Identity
 from dibs.enums import ScopeKind, Tier
 from dibs.errors import DibsError, NotFound
 from dibs.models import Equipment, EquipmentClass
-from dibs.permissions.access import compute_access, load_access
+from dibs.permissions.access import compute_access, load_access, reachable_equipment_ids
 from dibs.permissions.deps import require_dibs_access, require_dibs_access_csrf
 from dibs.services.settings import set_setting
 
@@ -124,3 +124,19 @@ async def test_require_dibs_access_gate(db_session):
     assert await require_dibs_access_csrf(member, db_session) is member
     with pytest.raises(DibsError):
         await require_dibs_access_csrf(outsider, db_session)
+
+
+async def test_reachable_equipment_ids(db_session):
+    open_cls = await make_class(db_session, name="Open2")
+    gated_cls = await make_class(db_session, name="Gated2", department_groups=["group-eng"])
+    eq_open = await make_equipment(db_session, klass=open_cls)
+    eq_gated = await make_equipment(db_session, klass=gated_cls)
+    admin = Identity("a", "", "", ("admin-dibs",))
+    member = Identity("m", "", "", ("group-eng",))
+    outsider = Identity("o", "", "", ("group-hr",))
+    assert await reachable_equipment_ids(db_session, admin) is None  # all
+    assert await reachable_equipment_ids(db_session, member) == {eq_open.id, eq_gated.id}
+    assert await reachable_equipment_ids(db_session, outsider) == {eq_open.id}
+    # dibs-wide gate excludes everyone not in it
+    await set_setting(db_session, "dibs_department_groups", ["group-eng"])
+    assert await reachable_equipment_ids(db_session, outsider) == set()

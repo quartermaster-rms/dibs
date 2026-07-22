@@ -84,6 +84,25 @@ async def _grant_tiers(
     return item_tier, class_tier
 
 
+async def reachable_equipment_ids(
+    session: AsyncSession, identity: Identity
+) -> set[uuid.UUID] | None:
+    """The equipment the caller may reach through the department gate. None means
+    'all' (admins bypass the gate)."""
+    if identity.is_admin:
+        return None
+    groups = set(identity.groups)
+    dibs_gate = set(await get_setting(session, "dibs_department_groups"))
+    if not department_gate_ok(False, groups, dibs_gate):
+        return set()
+    rows = await session.execute(
+        select(Equipment.id, EquipmentClass.department_groups).join(
+            EquipmentClass, Equipment.class_id == EquipmentClass.id
+        )
+    )
+    return {eq_id for eq_id, dept in rows if department_gate_ok(False, groups, set(dept))}
+
+
 async def load_access(session: AsyncSession, identity: Identity, equipment_id: uuid.UUID) -> Access:
     equipment = await session.get(Equipment, equipment_id)
     if equipment is None:

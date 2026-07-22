@@ -4,11 +4,13 @@ import asyncio
 import contextlib
 import os
 import sys
+import tempfile
 
 if sys.platform == "win32":
     # psycopg async requires a selector loop; the default on Windows is Proactor.
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
+os.environ.setdefault("UPLOADS_DIR", os.path.join(tempfile.gettempdir(), "dibs-test-uploads"))
 os.environ.setdefault("AUTH_MODE", "stub")
 os.environ.setdefault("PLATFORM_TZ", "America/Los_Angeles")
 os.environ.setdefault("COOKIE_SECURE", "false")  # test client speaks http
