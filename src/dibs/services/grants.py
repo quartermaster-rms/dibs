@@ -112,6 +112,23 @@ async def _actor_covering(
     return [ActorGrant(g.scope_kind, str(g.scope_id), g.tier, _flags_of(g)) for g in rows]
 
 
+async def caller_abilities(
+    session: AsyncSession, identity: Identity, equipment_id: uuid.UUID, class_id: uuid.UUID
+) -> dict:
+    """The caller's delegation abilities on an item (for capability-aware UI)."""
+    if identity.is_admin:
+        return {"can_promote": True, "can_grant_superuser": True, "can_demote": True}
+    grants = await _actor_covering(
+        session, identity.subject, ScopeKind.ITEM, equipment_id, str(class_id)
+    )
+    flags = actor_flags_for_target(grants, ScopeKind.ITEM, str(equipment_id), str(class_id)) or GrantFlags()
+    return {
+        "can_promote": flags.can_promote,
+        "can_grant_superuser": flags.can_grant_superuser,
+        "can_demote": flags.can_demote,
+    }
+
+
 async def _default_flags(session: AsyncSession) -> GrantFlags:
     return GrantFlags(
         await get_setting(session, "delegation_default_can_promote"),

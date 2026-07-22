@@ -117,6 +117,28 @@ async def test_cannot_affect_admin(client, db_session, login):
     assert r.status_code == 403 and r.json()["error"]["code"] == "grant_forbidden"
 
 
+async def test_my_abilities_in_equipment_detail(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(db_session, "su", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_promote=True)
+    await db_session.commit()
+    # a superuser sees only the abilities its grant carries
+    await login(subject="su")
+    detail = (await client.get(f"/api/equipment/{eq.id}")).json()
+    assert detail["my_abilities"] == {
+        "can_promote": True,
+        "can_grant_superuser": False,
+        "can_demote": False,
+    }
+    # an admin holds all delegation abilities
+    await login(subject="admin", groups=("admin-dibs",))
+    detail = (await client.get(f"/api/equipment/{eq.id}")).json()
+    assert detail["my_abilities"] == {
+        "can_promote": True,
+        "can_grant_superuser": True,
+        "can_demote": True,
+    }
+
+
 async def test_peer_demote_setting(client, db_session, login):
     eq = await make_equipment(db_session)
     await make_grant(db_session, "actor", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_demote=True)

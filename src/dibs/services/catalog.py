@@ -308,6 +308,9 @@ async def get_equipment(session: AsyncSession, identity: Identity, equipment_id:
         node_counts.get(equipment.id, 0),
     )
     detail["class"] = class_dict(cls)
+    from .grants import caller_abilities
+
+    detail["my_abilities"] = await caller_abilities(session, identity, equipment.id, cls.id)
     return detail
 
 

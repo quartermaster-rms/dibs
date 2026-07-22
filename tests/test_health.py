@@ -15,6 +15,14 @@ async def test_metrics_exposed(client):
     assert "dibs_http_requests_total" in resp.text
 
 
+async def test_public_config(client):
+    resp = await client.get("/api/config")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["platform_tz"] == "America/Los_Angeles"
+    assert body["stub_login"] is True
+
+
 async def test_request_id_echoed(client):
     resp = await client.get("/healthz", headers={"X-Request-Id": "not-a-uuid"})
     # invalid id is replaced with a generated UUID

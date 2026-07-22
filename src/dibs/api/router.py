@@ -7,6 +7,7 @@ from fastapi import APIRouter
 from ..auth.routes import router as auth_router
 from .admin import router as admin_router
 from .catalog import router as catalog_router
+from .config import router as config_router
 from .grants import router as grants_router
 from .issues import router as issues_router
 from .me import router as me_router
@@ -18,6 +19,7 @@ from .sessions import router as sessions_router
 
 def build_api_router() -> APIRouter:
     api = APIRouter(prefix="/api")
+    api.include_router(config_router, tags=["config"])
     api.include_router(auth_router, prefix="/auth", tags=["auth"])
     api.include_router(me_router, prefix="/me", tags=["me"])
     api.include_router(catalog_router, tags=["catalog"])
