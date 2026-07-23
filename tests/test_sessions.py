@@ -123,7 +123,7 @@ async def test_node_disabled_blocks_fresh_enable(client, db_session, login):
     assert r.status_code == 409 and r.json()["error"]["code"] == "node_disabled"
 
 
-async def test_force_close_notifies_holder(client, db_session, login):
+async def test_admin_force_close(client, db_session, login):
     eq = await _enable_gated_eq(db_session, subject="u-1")
     await db_session.commit()
     await login(subject="u-1")
@@ -131,14 +131,10 @@ async def test_force_close_notifies_holder(client, db_session, login):
     # non-holder non-admin cannot disable
     await login(subject="u-2")
     assert (await client.post(f"/api/equipment/{eq.id}/disable")).status_code == 403
-    # admin force-closes
+    # admin force-closes another user's session
     await login(subject="admin", groups=("admin-dibs",))
     d = await client.post(f"/api/equipment/{eq.id}/disable")
     assert d.status_code == 200 and d.json()["end_cause"] == "admin"
-    # holder was notified
-    await login(subject="u-1")
-    notes = (await client.get("/api/me/notifications?unread=true")).json()
-    assert len(notes) == 1 and "administrator" in notes[0]["body"].lower()
 
 
 async def test_disable_no_active_session(client, db_session, login):

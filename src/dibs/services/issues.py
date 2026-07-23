@@ -1,14 +1,12 @@
 """Issue reports: any user files/updates, only an admin closes. Equipment
-status color is derived from open issues; on a transition into red or back into
-green, upcoming reservation holders are notified. Filing/updating/closing never
-touches a running session."""
+status color is derived from open issues. Filing/updating/closing never touches
+a running session."""
 
 from __future__ import annotations
 
 import uuid
 from collections.abc import Sequence
 from pathlib import Path
-from typing import cast
 
 import anyio
 from fastapi import UploadFile
@@ -18,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.identity import Identity
 from ..config import get_settings
 from ..db import rows_to_dict
-from ..enums import IssueStatus, ReservationStatus, Severity, StatusColor
+from ..enums import IssueStatus, Severity
 from ..errors import NotFound
 from ..models import (
     Equipment,
@@ -26,52 +24,9 @@ from ..models import (
     IssueReport,
     IssueUpdate,
     Principal,
-    Reservation,
 )
 from ..permissions.access import require_reachable
 from ..timeutil import now_utc, to_wire
-from .notifications import notify
-
-
-async def _color(session: AsyncSession, equipment_id: uuid.UUID) -> StatusColor:
-    rows = await session.execute(
-        select(IssueReport.severity, func.count())
-        .where(IssueReport.equipment_id == equipment_id, IssueReport.status == IssueStatus.OPEN)
-        .group_by(IssueReport.severity)
-    )
-    counts = rows_to_dict(rows)
-    if counts.get(Severity.FATAL, 0) > 0:
-        return StatusColor.RED
-    if counts.get(Severity.WARNING, 0) > 0:
-        return StatusColor.YELLOW
-    return StatusColor.GREEN
-
-
-async def _notify_transition(
-    session: AsyncSession, equipment_id: uuid.UUID, before: StatusColor, after: StatusColor
-) -> None:
-    if after == before:
-        return
-    if after == StatusColor.RED:
-        message = "is out of service (a fatal issue was reported)"
-    elif after == StatusColor.GREEN:
-        message = "is back in service"
-    else:
-        return
-    equipment = cast(Equipment, await session.get(Equipment, equipment_id))
-    subjects = (
-        await session.execute(
-            select(Reservation.user_id)
-            .where(
-                Reservation.equipment_id == equipment_id,
-                Reservation.status == ReservationStatus.BOOKED,
-                Reservation.starts_at > now_utc(),
-            )
-            .distinct()
-        )
-    ).scalars()
-    for subject in subjects:
-        await notify(session, subject, f"{equipment.name} {message}.")
 
 
 async def _names(session: AsyncSession, subjects: set[str]) -> dict[str, str]:
@@ -119,7 +74,6 @@ async def file_issue(
     description: str,
 ) -> dict:
     await require_reachable(session, identity, equipment_id)
-    before = await _color(session, equipment_id)
     issue = IssueReport(
         equipment_id=equipment_id,
         reporter_id=identity.subject,
@@ -130,8 +84,6 @@ async def file_issue(
     )
     session.add(issue)
     await session.flush()
-    after = await _color(session, equipment_id)
-    await _notify_transition(session, equipment_id, before, after)
     return _summary(issue, None, None)
 
 
@@ -188,13 +140,10 @@ async def close_issue(session: AsyncSession, identity: Identity, issue_id: uuid.
         raise NotFound("issue not found")
     if issue.status == IssueStatus.CLOSED:
         return _summary(issue, None, None)
-    before = await _color(session, issue.equipment_id)
     issue.status = IssueStatus.CLOSED
     issue.closed_by = identity.subject
     issue.closed_at = now_utc()
     await session.flush()
-    after = await _color(session, issue.equipment_id)
-    await _notify_transition(session, issue.equipment_id, before, after)
     return _summary(issue, None, None)
 
 

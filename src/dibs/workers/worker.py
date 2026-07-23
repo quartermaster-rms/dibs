@@ -1,5 +1,4 @@
-"""Worker process: node-offline detection and background notification dispatch.
-Never re-evaluates a session."""
+"""Worker process: node-offline detection. Never re-evaluates a session."""
 
 from __future__ import annotations
 

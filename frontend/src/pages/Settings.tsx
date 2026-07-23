@@ -11,7 +11,6 @@ const NUMBER_KEYS = [
   "node_offline_missed_heartbeats",
   "desired_state_ttl_multiplier",
   "key_rotation_grace_hours",
-  "digest_hour_local",
 ];
 const BOOL_KEYS = [
   "delegation_default_can_promote",

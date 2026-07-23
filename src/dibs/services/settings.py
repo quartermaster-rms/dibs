@@ -34,8 +34,6 @@ DEFAULTS: dict[str, Any] = {
     "node_offline_missed_heartbeats": 3,
     "desired_state_ttl_multiplier": 3,
     "key_rotation_grace_hours": 48,
-    # Scheduler
-    "digest_hour_local": 8,
 }
 
 

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime, timedelta
-
-from tests.factories import make_class, make_equipment, make_grant, make_issue, make_reservation
+from tests.factories import make_class, make_equipment, make_grant, make_issue
 
 from dibs.enums import ScopeKind, Severity, Tier
 
@@ -73,26 +71,6 @@ async def test_photo_upload(client, db_session, login):
         files={"file": ("x.png", b"\x89PNG data", "image/png")},
     )
     assert r.status_code == 201 and r.json()["path"].endswith(".png")
-
-
-async def test_red_green_notifies_upcoming_holders(client, db_session, login):
-    eq = await make_equipment(db_session)
-    future = datetime.now(UTC).replace(minute=0, second=0, microsecond=0) + timedelta(
-        days=1, hours=2
-    )
-    await make_reservation(db_session, eq.id, "holder", future, future + timedelta(hours=1))
-    await db_session.commit()
-    await login(subject="reporter")
-    issue = (await _file(client, eq.id, severity="fatal")).json()
-    await login(subject="holder")
-    notes = (await client.get("/api/me/notifications")).json()
-    assert any("out of service" in n["body"] for n in notes)
-    # close -> back to green -> notified again
-    await login(subject="admin", groups=("admin-dibs",))
-    await client.post(f"/api/issues/{issue['id']}/close")
-    await login(subject="holder")
-    notes = (await client.get("/api/me/notifications")).json()
-    assert any("back in service" in n["body"] for n in notes)
 
 
 async def test_list_filters_and_reachability(client, db_session, login):

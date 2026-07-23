@@ -213,17 +213,6 @@ class InterlockNode(TimestampMixin, Base):
     equipment: Mapped[Equipment] = relationship(back_populates="nodes", lazy="raise")
 
 
-class Notification(Base):
-    __tablename__ = "notification"
-    id: Mapped[uuid.UUID] = uuid_pk()
-    recipient: Mapped[str] = mapped_column(SUBJECT, nullable=False)
-    body: Mapped[str] = mapped_column(Text, nullable=False)
-    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
-    )
-
-
 class Principal(Base):
     __tablename__ = "principal"
     subject: Mapped[str] = mapped_column(SUBJECT, primary_key=True)

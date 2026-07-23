@@ -169,13 +169,6 @@ export interface Node {
   key?: string;
 }
 
-export interface Notification {
-  id: string;
-  body: string;
-  read_at: string | null;
-  created_at: string;
-}
-
 export interface QuotaWindow {
   window: "day" | "week" | "month";
   limit_hours: string | null;

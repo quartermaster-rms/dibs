@@ -9,7 +9,6 @@ import { EquipmentList } from "./pages/EquipmentList";
 import { IssueDetail } from "./pages/IssueDetail";
 import { IssuesPage } from "./pages/Issues";
 import { Login } from "./pages/Login";
-import { NotificationsPage } from "./pages/Notifications";
 import { PeoplePage } from "./pages/People";
 import { SettingsPage } from "./pages/Settings";
 import { useTheme } from "./theme";
@@ -45,7 +44,6 @@ function Layout({ children }: { children: React.ReactNode }) {
             <NavItem to="/">Equipment</NavItem>
             <NavItem to="/issues">Issues</NavItem>
             <NavItem to="/people">People</NavItem>
-            <NavItem to="/notifications">Inbox</NavItem>
             {me?.is_admin && <NavItem to="/settings">Settings</NavItem>}
             {me?.is_admin && <NavItem to="/audit">Audit</NavItem>}
           </nav>
@@ -82,7 +80,6 @@ export default function App() {
         <Route path="/issues" element={<IssuesPage />} />
         <Route path="/issues/:id" element={<IssueDetail />} />
         <Route path="/people" element={<PeoplePage />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
         {me.is_admin && <Route path="/settings" element={<SettingsPage />} />}
         {me.is_admin && <Route path="/audit" element={<AuditPage />} />}
         <Route path="*" element={<Navigate to="/" replace />} />

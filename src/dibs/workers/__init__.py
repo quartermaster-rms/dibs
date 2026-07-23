@@ -1,3 +1,2 @@
-"""Background processes: worker (notification dispatch, node-offline detection)
-and scheduler (reservation-completion sweep, admin daily digest). Neither ever
-re-evaluates or ends a session."""
+"""Background processes: worker (node-offline detection) and scheduler
+(reservation-completion sweep). Neither ever re-evaluates or ends a session."""

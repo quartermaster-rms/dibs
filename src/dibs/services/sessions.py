@@ -6,7 +6,6 @@ reservations and never touches them."""
 from __future__ import annotations
 
 import uuid
-from typing import cast
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -15,10 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.identity import Identity
 from ..enums import EndCause, IssueStatus, Severity
 from ..errors import Conflict, Forbidden, named_error
-from ..models import Equipment, InterlockNode, IssueReport, Session
+from ..models import InterlockNode, IssueReport, Session
 from ..permissions.access import load_access
 from ..timeutil import now_utc, to_wire
-from .notifications import notify
 from .quotas import check_usage_quota
 
 
@@ -111,11 +109,4 @@ async def disable(session: AsyncSession, identity: Identity, equipment_id: uuid.
     live.ended_at = now_utc()
     live.end_cause = cause
     await session.flush()
-    if cause == EndCause.ADMIN:
-        equipment = cast(Equipment, await session.get(Equipment, equipment_id))
-        await notify(
-            session,
-            live.user_id,
-            f"An administrator ended your session on {equipment.name}.",
-        )
     return _session_dict(live)
