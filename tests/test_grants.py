@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from tests.factories import make_equipment, make_grant
+from tests.factories import make_class, make_equipment, make_grant
 
 from dibs.enums import ScopeKind, Tier
 
@@ -137,6 +137,52 @@ async def test_my_abilities_in_equipment_detail(client, db_session, login):
         "can_grant_superuser": True,
         "can_demote": True,
     }
+
+
+async def test_grants_roster_and_quota_respect_department_gate(client, db_session, login):
+    gated = await make_class(db_session, name="Gated-roster", department_groups=["group-eng"])
+    eq = await make_equipment(db_session, klass=gated)
+    await make_grant(db_session, "su", ScopeKind.ITEM, eq.id, Tier.SUPERUSER)
+    await db_session.commit()
+    # an outsider passes the dibs-wide gate but not the class department gate
+    await login(subject="outsider", groups=("group-hr",))
+    assert (await client.get(f"/api/equipment/{eq.id}/grants")).status_code == 404
+    assert (await client.get(f"/api/classes/{gated.id}/grants")).status_code == 404
+    assert (await client.get(f"/api/me/quota?equipment_id={eq.id}")).status_code == 404
+    # a department member reaches all three
+    await login(subject="member", groups=("group-eng",))
+    assert (await client.get(f"/api/equipment/{eq.id}/grants")).status_code == 200
+    assert (await client.get(f"/api/classes/{gated.id}/grants")).status_code == 200
+    assert (await client.get(f"/api/me/quota?equipment_id={eq.id}")).status_code == 200
+
+
+async def test_roster_demotable_reflects_peer_and_self_rules(client, db_session, login):
+    eq = await make_equipment(db_session)
+    await make_grant(db_session, "actor", ScopeKind.ITEM, eq.id, Tier.SUPERUSER, can_demote=True)
+    await make_grant(db_session, "peer", ScopeKind.ITEM, eq.id, Tier.SUPERUSER)
+    await make_grant(db_session, "plainuser", ScopeKind.ITEM, eq.id, Tier.USER)
+    await db_session.commit()
+
+    async def roster():
+        rows = (await client.get(f"/api/equipment/{eq.id}/grants")).json()
+        return {g["subject"]: g for g in rows}
+
+    # a can_demote superuser may demote a plain user, but not a peer superuser
+    # or itself while the peer/self settings are off (default)
+    await login(subject="actor")
+    r = await roster()
+    assert r["plainuser"]["demotable"] is True
+    assert r["peer"]["demotable"] is False
+    assert r["actor"]["demotable"] is False
+    # an admin may demote everyone in the roster
+    await login(subject="admin", groups=("admin-dibs",))
+    assert all(g["demotable"] for g in (await roster()).values())
+    # enabling peer-demote makes the peer demotable; self stays off
+    await client.put("/api/settings", json={"delegation_allow_peer_demote": True})
+    await login(subject="actor")
+    r = await roster()
+    assert r["peer"]["demotable"] is True
+    assert r["actor"]["demotable"] is False
 
 
 async def test_peer_demote_setting(client, db_session, login):

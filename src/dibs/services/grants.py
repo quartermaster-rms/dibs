@@ -4,21 +4,23 @@ the caller's configured delegation abilities."""
 from __future__ import annotations
 
 import uuid
+from collections.abc import Callable
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..auth.identity import Identity
 from ..enums import ScopeKind, Tier
-from ..errors import NotFound
+from ..errors import DibsError, NotFound
 from ..models import Equipment, EquipmentClass, Principal, RoleGrant
-from ..permissions.access import load_access
+from ..permissions.access import require_reachable
 from ..permissions.delegation import (
     ActorGrant,
     GrantFlags,
     actor_flags_for_target,
     authorize_transition,
 )
+from ..permissions.tiers import department_gate_ok
 from .settings import get_setting
 
 
@@ -41,7 +43,43 @@ def _grant_dict(g: RoleGrant, name: str | None = None, email: str | None = None)
     }
 
 
-async def _roster(session: AsyncSession, condition, q: str | None) -> list[dict]:
+def _may_demote(
+    identity: Identity,
+    actor_grants: list[ActorGrant],
+    grant: RoleGrant,
+    item_class_id: str | None,
+    allow_peer: bool,
+    allow_self: bool,
+) -> bool:
+    """Whether the caller may demote this specific grant to none (mirrors the
+    PUT /grants transition so the UI never offers a control that fails on click)."""
+    target_class_id = item_class_id if grant.scope_kind == ScopeKind.ITEM else None
+    actor_flags = actor_flags_for_target(
+        actor_grants, grant.scope_kind, str(grant.scope_id), target_class_id
+    )
+    try:
+        authorize_transition(
+            actor_is_admin=identity.is_admin,
+            actor_flags=actor_flags,
+            actor_is_target=identity.subject == grant.subject,
+            target_is_admin=False,  # admins are filtered from the roster
+            current_tier=grant.tier,
+            new_tier=Tier.NONE,
+            requested_flags=GrantFlags(),
+            allow_peer_demote=allow_peer,
+            allow_self_demote=allow_self,
+        )
+        return True
+    except DibsError:
+        return False
+
+
+async def _roster(
+    session: AsyncSession,
+    condition,
+    q: str | None,
+    demotable_fn: Callable[[RoleGrant], bool] | None = None,
+) -> list[dict]:
     rows = (
         await session.execute(
             select(RoleGrant, Principal)
@@ -59,28 +97,57 @@ async def _roster(session: AsyncSession, condition, q: str | None) -> list[dict]
             hay = f"{grant.subject} {name or ''} {email or ''}".lower()
             if q.lower() not in hay:
                 continue
-        result.append(_grant_dict(grant, name, email))
+        row = _grant_dict(grant, name, email)
+        if demotable_fn is not None:
+            row["demotable"] = demotable_fn(grant)
+        result.append(row)
     return result
 
 
 async def list_item_grants(
     session: AsyncSession, identity: Identity, equipment_id: uuid.UUID, q: str | None
 ) -> list[dict]:
-    access = await load_access(session, identity, equipment_id)
+    access = await require_reachable(session, identity, equipment_id)
+    class_id = str(access.class_id)
+    actor_grants = await _actor_covering(
+        session, identity.subject, ScopeKind.ITEM, equipment_id, class_id
+    )
+    allow_peer = await get_setting(session, "delegation_allow_peer_demote")
+    allow_self = await get_setting(session, "delegation_allow_self_demote")
     condition = or_(
         (RoleGrant.scope_kind == ScopeKind.ITEM) & (RoleGrant.scope_id == equipment_id),
         (RoleGrant.scope_kind == ScopeKind.CLASS) & (RoleGrant.scope_id == access.class_id),
     )
-    return await _roster(session, condition, q)
+
+    def demotable(g: RoleGrant) -> bool:
+        return _may_demote(identity, actor_grants, g, class_id, allow_peer, allow_self)
+
+    return await _roster(session, condition, q, demotable)
 
 
 async def list_class_grants(
     session: AsyncSession, identity: Identity, class_id: uuid.UUID, q: str | None
 ) -> list[dict]:
-    if await session.get(EquipmentClass, class_id) is None:
+    klass = await session.get(EquipmentClass, class_id)
+    if klass is None:
         raise NotFound("class not found")
+    if not identity.is_admin:
+        groups = set(identity.groups)
+        dibs_gate = set(await get_setting(session, "dibs_department_groups"))
+        reachable = department_gate_ok(False, groups, dibs_gate) and department_gate_ok(
+            False, groups, set(klass.department_groups)
+        )
+        if not reachable:
+            raise NotFound("class not found")
+    actor_grants = await _actor_covering(session, identity.subject, ScopeKind.CLASS, class_id, None)
+    allow_peer = await get_setting(session, "delegation_allow_peer_demote")
+    allow_self = await get_setting(session, "delegation_allow_self_demote")
     condition = (RoleGrant.scope_kind == ScopeKind.CLASS) & (RoleGrant.scope_id == class_id)
-    return await _roster(session, condition, q)
+
+    def demotable(g: RoleGrant) -> bool:
+        return _may_demote(identity, actor_grants, g, None, allow_peer, allow_self)
+
+    return await _roster(session, condition, q, demotable)
 
 
 async def _actor_covering(

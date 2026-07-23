@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from ..auth.dependencies import current_identity, current_identity_csrf
 from ..auth.identity import Identity
 from ..db import get_session
-from ..permissions.access import load_access
+from ..permissions.access import require_reachable
 from ..permissions.deps import require_dibs_access
 from ..services import audit, notifications, quotas
 
@@ -33,7 +33,7 @@ async def my_quota(
     identity: Identity = Depends(require_dibs_access),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    access = await load_access(session, identity, equipment_id)
+    access = await require_reachable(session, identity, equipment_id)
     return await quotas.quota_summary(session, identity, equipment_id, access.class_id)
 
 
