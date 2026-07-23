@@ -15,6 +15,15 @@ x-depends: &depends
   redis:
     condition: service_healthy
 
+# Long-running roles additionally wait for the one-shot init to create the schema.
+x-needs-init: &needs-init
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+  init:
+    condition: service_completed_successfully
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -41,10 +50,16 @@ services:
       retries: 20
     restart: unless-stopped
 
+  init:
+    <<: *app
+    command: ["init"]
+    depends_on: *depends
+    restart: "no"
+
   api:
     <<: *app
     command: ["api"]
-    depends_on: *depends
+    depends_on: *needs-init
     # Only the api web port is published, and only on host loopback; an
     # operator reverse proxy terminates TLS and routes to it.
     ports: ["127.0.0.1:${API_PORT:-8000}:8000"]
@@ -59,17 +74,17 @@ services:
   worker:
     <<: *app
     command: ["worker"]
-    depends_on: *depends
+    depends_on: *needs-init
 
   scheduler:
     <<: *app
     command: ["scheduler"]
-    depends_on: *depends
+    depends_on: *needs-init
 
   device:
     <<: *app
     command: ["device"]
-    depends_on: *depends
+    depends_on: *needs-init
     # The device port terminates its own TLS inside the stack (nodes pin the CA).
     ports: ["${DEVICE_PORT:-8443}:8443"]
     volumes: ["uploads:/data/uploads", "./tls:/tls:ro"]

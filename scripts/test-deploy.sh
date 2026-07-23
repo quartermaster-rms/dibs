@@ -82,6 +82,17 @@ compose exec -T postgres psql -U dibs -d dibs -tAc \
   "SELECT count(*) FROM pg_trigger WHERE tgname IN ('interlock_node_gated','equipment_keep_gated','class_keep_gated')" \
   | tr -d '\r' | grep -q '^3$' || fail "enable-gating triggers missing"
 
+echo ">> worker + scheduler up without crash-looping"
+for svc in worker scheduler; do
+  cid="$(compose ps -q "$svc")"
+  st="$(docker inspect --format '{{.State.Status}}' "$cid" 2>/dev/null || echo missing)"
+  rc="$(docker inspect --format '{{.RestartCount}}' "$cid" 2>/dev/null || echo 0)"
+  if [ "$st" != running ] || [ "$rc" != 0 ]; then
+    compose logs "$svc" 2>&1 | tail -30
+    fail "$svc did not stay up (status=$st restarts=$rc)"
+  fi
+done
+
 echo ">> api plane"
 curl -fsS "$API/healthz" | grep -q '"status": *"ok"' || fail "healthz"
 curl -fsS -c /tmp/dibs-testdeploy-cookies.txt -X POST "$API/api/auth/stub-login" \
