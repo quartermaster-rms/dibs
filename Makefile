@@ -59,6 +59,10 @@ coverage-security:  ## Enforce 100% branch coverage on security-sensitive paths
 test-deploy:  ## Verify the production image + deploy flow end to end
 	bash scripts/test-deploy.sh
 
+.PHONY: test-deploy-linux
+test-deploy-linux:  ## Run test-deploy inside Linux dind (faithful bind-mount perms on non-Linux hosts)
+	bash scripts/verify-deploy-linux.sh
+
 .PHONY: build
 build:  ## Build all production images
 	docker compose -f deploy/docker-compose.yml build
