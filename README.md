@@ -47,6 +47,5 @@ in-app by admins on the Settings page.
 - `src/dibs/` — FastAPI backend: user api, interlock device plane, worker,
   scheduler.
 - `frontend/` — React + TypeScript SPA, served by the api.
-- `migrations/` — Alembic migrations (forward-only).
 - `deploy/` — Dockerfile, Compose stack, `host.env` template.
 - `SPEC.md` — the service specification.

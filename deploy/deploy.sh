@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Deploy the stack. If the new image set fails its health check, make one
 # bounded, same-invocation attempt to reactivate the immediately previous image
-# set (pinned to the exact image), then exit non-zero. Migrations are never
+# set (pinned to the exact image), then exit non-zero. Schema changes are never
 # rolled back; there is no operator rollback command or cached-image selector
 # (IMPLEMENTATION-GUIDE §8).
 set -euo pipefail

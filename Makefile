@@ -39,9 +39,9 @@ fmt:  ## Auto-format
 	$(PY) -m ruff format src tests
 	$(PY) -m ruff check --fix src tests
 
-.PHONY: migrate
-migrate:  ## Apply migrations to $DATABASE_URL
-	$(PY) -m alembic upgrade head
+.PHONY: init-db
+init-db:  ## Create the schema on $DATABASE_URL (idempotent)
+	$(PY) -m dibs.schema
 
 .PHONY: test
 test:  ## Run the full test suite (backend + frontend); the binding gate

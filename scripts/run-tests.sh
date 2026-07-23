@@ -44,8 +44,8 @@ fi
 export AUTH_MODE="${AUTH_MODE:-stub}"
 export PLATFORM_TZ="${PLATFORM_TZ:-America/Los_Angeles}"
 
-echo ">> migrating"
-$PYTHON -m alembic upgrade head
+echo ">> creating schema"
+$PYTHON -m dibs.schema
 
 echo ">> pytest"
 $PYTHON -m pytest --cov=dibs --cov-branch --cov-report=term-missing \

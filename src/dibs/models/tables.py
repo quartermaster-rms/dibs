@@ -1,6 +1,6 @@
-"""ORM table definitions. The initial migration is the source of truth for
-exotic DB constraints (GiST exclusion, partial unique index, triggers, CHECKs);
-these classes mirror the columns for ORM use."""
+"""ORM table definitions — the source of truth for the schema. ``dibs.schema``
+builds the database from this metadata plus the exotic objects it cannot express
+(the GiST exclusion constraint and the enable-gating triggers)."""
 
 from __future__ import annotations
 
@@ -44,7 +44,7 @@ SUBJECT = String(255)
 
 def _enum(py, name):  # noqa: ANN001
     # Persist the enum *values* (lowercase strings), matching the wire format and
-    # the raw SQL predicates in migrations.
+    # the raw SQL predicates in dibs.schema.
     return Enum(
         py,
         native_enum=False,

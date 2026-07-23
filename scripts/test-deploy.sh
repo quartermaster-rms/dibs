@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build and verify the production Docker artifact end to end: the stack boots,
-# runs non-root, applies migrations, serves the api + SPA + device port, and
+# runs non-root, creates the schema, serves the api + SPA + device port, and
 # keeps Postgres/Redis internal.
 set -euo pipefail
 
@@ -71,10 +71,13 @@ echo ">> runs non-root"
 uid="$(compose exec -T api id -u | tr -d '\r')"
 [ "$uid" = 10001 ] || fail "api not non-root (uid=$uid)"
 
-echo ">> migrations applied (at head)"
-head_rev="$(compose exec -T api alembic heads 2>/dev/null | tr -d '\r' | grep -oiE '^[0-9a-f]+' | head -1)"
-compose exec -T api alembic current 2>&1 | tr -d '\r' | grep -q "${head_rev:-__no_head__}" \
-  || fail "migrations not at head (head=$head_rev)"
+echo ">> schema invariants present"
+compose exec -T postgres psql -U dibs -d dibs -tAc \
+  "SELECT count(*) FROM pg_constraint WHERE conname='reservation_no_overlap'" \
+  | tr -d '\r' | grep -q '^1$' || fail "GiST exclusion constraint missing"
+compose exec -T postgres psql -U dibs -d dibs -tAc \
+  "SELECT count(*) FROM pg_trigger WHERE tgname IN ('interlock_node_gated','equipment_keep_gated','class_keep_gated')" \
+  | tr -d '\r' | grep -q '^3$' || fail "enable-gating triggers missing"
 
 echo ">> api plane"
 curl -fsS "$API/healthz" | grep -q '"status": *"ok"' || fail "healthz"

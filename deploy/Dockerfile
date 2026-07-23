@@ -17,9 +17,8 @@ ENV PYTHONUNBUFFERED=1 \
 RUN useradd --create-home --uid 10001 dibs \
     && mkdir -p /data/uploads && chown -R dibs:dibs /data
 WORKDIR /app
-COPY pyproject.toml alembic.ini ./
+COPY pyproject.toml ./
 COPY src ./src
-COPY migrations ./migrations
 RUN pip install .
 COPY --from=frontend /app/frontend/dist ./frontend/dist
 COPY deploy/entrypoint.sh /usr/local/bin/entrypoint.sh

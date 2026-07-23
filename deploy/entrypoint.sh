@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Dispatch container role. The api role applies forward-only migrations before
-# serving (expand phase); no role ever re-evaluates a session.
+# Dispatch container role. The api role creates the schema (idempotent) before
+# serving; no role ever re-evaluates a session.
 set -euo pipefail
 
 role="${1:-api}"
 case "$role" in
   api)
-    alembic upgrade head
+    python -m dibs.schema
     exec gunicorn dibs.app:app \
       -k uvicorn.workers.UvicornWorker \
       -b 0.0.0.0:8000 \

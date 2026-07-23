@@ -12,7 +12,6 @@ dependencies = [
     "uvicorn[standard]>=0.30",
     "gunicorn>=22",
     "sqlalchemy[asyncio]>=2.0.30",
-    "alembic>=1.13",
     "psycopg[binary,pool]>=3.2",
     "redis>=5.0",
     "pydantic>=2.7",
@@ -61,7 +60,9 @@ filterwarnings = ["error::DeprecationWarning:dibs.*"]
 [tool.coverage.run]
 branch = true
 source = ["dibs"]
-omit = ["src/dibs/migrations/*"]
+# schema.py runs as a subprocess before the suite (run-tests.sh) and at deploy,
+# so it is exercised end to end rather than measured in the pytest process.
+omit = ["src/dibs/schema.py"]
 # SQLAlchemy async hops into a greenlet; without this, coverage loses the
 # continuation after every `await session.*` call.
 concurrency = ["thread", "greenlet"]
