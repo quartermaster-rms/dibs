@@ -15,7 +15,7 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DIND_IMAGE="${DIND_IMAGE:-docker:27-dind}"
-DHOST="-e DOCKER_HOST=unix:///var/run/docker.sock"
+DHOST=(-e DOCKER_HOST=unix:///var/run/docker.sock)
 
 command -v docker >/dev/null || { echo "docker is required on the host"; exit 1; }
 
@@ -25,7 +25,7 @@ cleanup() { docker rm -f "$CID" >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
 echo ">> waiting for the inner docker daemon"
-docker exec $DHOST "$CID" sh -c \
+docker exec "${DHOST[@]}" "$CID" sh -c \
   'for _ in $(seq 1 60); do docker info >/dev/null 2>&1 && exit 0; sleep 1; done; exit 1' \
   || { echo "inner docker daemon did not start"; exit 1; }
 
@@ -41,4 +41,4 @@ tar -c -C "$ROOT" \
   . | docker exec -i "$CID" sh -c 'mkdir -p /work && tar -x -C /work'
 
 echo ">> running the real test-deploy gate on Linux (this builds the image)"
-docker exec $DHOST "$CID" bash -c 'cd /work && bash scripts/test-deploy.sh'
+docker exec "${DHOST[@]}" "$CID" bash -c 'cd /work && bash scripts/test-deploy.sh'

@@ -28,11 +28,12 @@ install: venv  ## Install backend (dev) and frontend deps
 	cd frontend && npm ci
 
 .PHONY: lint
-lint:  ## Lint backend (ruff + mypy) and frontend
+lint:  ## Lint backend (ruff + mypy), frontend (eslint + tsc), and shell (shellcheck)
 	$(PY) -m ruff check src tests
 	$(PY) -m ruff format --check src tests
 	$(PY) -m mypy src
 	cd frontend && npm run lint
+	bash scripts/lint-shell.sh
 
 .PHONY: fmt
 fmt:  ## Auto-format
