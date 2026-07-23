@@ -4,18 +4,35 @@ import { Link } from "react-router-dom";
 import { api, qs } from "../api/client";
 import type { EquipmentRow, Tier } from "../api/types";
 import { EnableControl } from "../components/EnableControl";
-import { Badge, Card, Empty, ErrorNote, Input, Spinner, StatusDot } from "../components/ui";
+import {
+  Badge,
+  Card,
+  CheckboxField,
+  Empty,
+  ErrorNote,
+  Input,
+  PageHeading,
+  Spinner,
+  StatusDot,
+} from "../components/ui";
 import { fmtDateTime } from "../lib/time";
 import { useAsync } from "../lib/useAsync";
 
-const tierTone: Record<Tier, "muted" | "brand"> = { none: "muted", user: "brand", superuser: "brand" };
+const tierTone: Record<Tier, "muted" | "brand"> = {
+  none: "muted",
+  user: "brand",
+  superuser: "brand",
+};
 
 function Row({ row, onChange }: { row: EquipmentRow; onChange: () => void }) {
   return (
-    <Card className="flex flex-wrap items-center gap-x-4 gap-y-2">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3 transition-colors hover:bg-surface-muted">
       <StatusDot color={row.status.color} counts={row.status} />
       <div className="min-w-[12rem] flex-1">
-        <Link to={`/equipment/${row.id}`} className="font-medium text-text hover:text-brand">
+        <Link
+          to={`/equipment/${row.id}`}
+          className="rounded font-medium text-text transition-colors hover:text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
           {row.name}
         </Link>
         <div className="text-xs text-text-muted">
@@ -33,7 +50,7 @@ function Row({ row, onChange }: { row: EquipmentRow; onChange: () => void }) {
         {!row.current_holder && !row.next_reservation && <div>Free</div>}
       </div>
       <EnableControl row={row} onChange={onChange} />
-    </Card>
+    </div>
   );
 }
 
@@ -42,16 +59,14 @@ export function EquipmentList() {
   const [authorized, setAuthorized] = useState(false);
   const [enabledByMe, setEnabledByMe] = useState(false);
   const { data, error, loading, reload } = useAsync(
-    () =>
-      api.get<EquipmentRow[]>(
-        "/equipment" + qs({ q, authorized, enabled_by_me: enabledByMe }),
-      ),
+    () => api.get<EquipmentRow[]>("/equipment" + qs({ q, authorized, enabled_by_me: enabledByMe })),
     [q, authorized, enabledByMe],
   );
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-wrap items-center gap-3">
+      <PageHeading title="Equipment" subtitle={data ? `${data.length} shown` : undefined} />
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <Input
           placeholder="Search equipment, class, or location…"
           value={q}
@@ -59,18 +74,16 @@ export function EquipmentList() {
           className="max-w-sm"
           aria-label="Search equipment"
         />
-        <label className="flex items-center gap-1.5 text-sm text-text">
-          <input type="checkbox" checked={authorized} onChange={(e) => setAuthorized(e.target.checked)} />
-          Equipment I&apos;m authorized to
-        </label>
-        <label className="flex items-center gap-1.5 text-sm text-text">
-          <input
-            type="checkbox"
-            checked={enabledByMe}
-            onChange={(e) => setEnabledByMe(e.target.checked)}
-          />
-          Equipment I have enabled
-        </label>
+        <CheckboxField
+          label="Authorized to me"
+          checked={authorized}
+          onChange={(e) => setAuthorized(e.target.checked)}
+        />
+        <CheckboxField
+          label="Enabled by me"
+          checked={enabledByMe}
+          onChange={(e) => setEnabledByMe(e.target.checked)}
+        />
       </div>
       <ErrorNote error={error} />
       {loading ? (
@@ -78,11 +91,11 @@ export function EquipmentList() {
       ) : !data?.length ? (
         <Empty>No equipment matches.</Empty>
       ) : (
-        <div className="space-y-2">
+        <Card className="divide-y divide-border overflow-hidden p-0">
           {data.map((row) => (
             <Row key={row.id} row={row} onChange={reload} />
           ))}
-        </div>
+        </Card>
       )}
     </div>
   );

@@ -47,7 +47,10 @@ export function IssueDetail() {
 
   return (
     <div className="space-y-4">
-      <Link to={`/equipment/${data.equipment_id}`} className="text-sm text-brand">
+      <Link
+        to={`/equipment/${data.equipment_id}`}
+        className="inline-flex items-center gap-1 text-sm text-brand transition-colors hover:text-brand-hover hover:underline"
+      >
         ← Equipment
       </Link>
       <Card>
@@ -72,7 +75,7 @@ export function IssueDetail() {
       </Card>
 
       <Card>
-        <h3 className="mb-2 text-sm font-semibold">Update history</h3>
+        <h3 className="mb-3 text-base font-semibold text-text">Update history</h3>
         <ul className="space-y-2">
           {data.updates.map((u) => (
             <li key={u.id} className="border-l-2 border-border pl-3 text-sm">

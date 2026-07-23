@@ -12,7 +12,9 @@ function KeyModal({ token, onClose }: { token: string; onClose: () => void }) {
       <p className="mb-2 text-sm text-text-muted">
         Copy this key into the node firmware now. It is stored hashed and cannot be shown again.
       </p>
-      <code className="block break-all rounded-control bg-surface-muted p-2 text-sm">{token}</code>
+      <code className="block break-all rounded-control border border-border bg-surface-muted p-2 text-sm text-text">
+        {token}
+      </code>
     </Modal>
   );
 }
@@ -97,7 +99,7 @@ export function InterlocksSection({ eq }: { eq: EquipmentDetail }) {
 
   return (
     <Card>
-      <h3 className="mb-2 text-sm font-semibold">Interlocks (admin)</h3>
+      <h3 className="mb-3 text-base font-semibold text-text">Interlocks (admin)</h3>
       <ErrorNote error={error} />
       <ErrorNote error={err} />
       {loading ? (
@@ -107,22 +109,30 @@ export function InterlocksSection({ eq }: { eq: EquipmentDetail }) {
       ) : (
         <ul className="divide-y divide-border">
           {data.map((n) => (
-            <li key={n.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
-              <span className="flex items-center gap-2">
-                <span className="font-medium">{n.name || "node"}</span>
+            <li
+              key={n.id}
+              className="-mx-4 flex flex-wrap items-center justify-between gap-2 px-4 py-2 text-sm transition-colors hover:bg-surface-muted"
+            >
+              <span className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-text">{n.name || "node"}</span>
                 <Badge>{n.fail_state}</Badge>
                 {n.offline && <Badge tone="danger">offline</Badge>}
                 {!n.enabled && <Badge tone="warning">killed</Badge>}
-                <span className="text-xs text-text-muted">hb {fmtDateTime(n.last_heartbeat_at)}</span>
+                <span className="text-xs text-text-muted">
+                  Last seen {fmtDateTime(n.last_heartbeat_at)}
+                </span>
               </span>
               <span className="flex items-center gap-1">
-                <Button variant="ghost" onClick={() => patch(n, { enabled: !n.enabled })}>
+                <Button
+                  variant={n.enabled ? "ghost-danger" : "ghost"}
+                  onClick={() => patch(n, { enabled: !n.enabled })}
+                >
                   {n.enabled ? "Kill" : "Un-kill"}
                 </Button>
                 <Button variant="ghost" onClick={() => rotate(n)}>
                   Rotate key
                 </Button>
-                <Button variant="ghost" onClick={() => remove(n)}>
+                <Button variant="ghost-danger" onClick={() => remove(n)}>
                   Remove
                 </Button>
               </span>

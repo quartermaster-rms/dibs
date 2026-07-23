@@ -1,13 +1,18 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { ApiError, api, qs } from "../api/client";
 import type { AuditEntry } from "../api/types";
-import { Button, Card, Empty, ErrorNote, Input, Spinner } from "../components/ui";
+import { Button, Card, Empty, ErrorNote, Input, PageHeading, Spinner } from "../components/ui";
 import { fmtDateTime } from "../lib/time";
 
 interface Page {
   items: AuditEntry[];
   next_cursor: string | null;
+}
+
+function json(v: unknown): string {
+  if (v == null) return "—";
+  return JSON.stringify(v, null, 2);
 }
 
 export function AuditPage() {
@@ -16,6 +21,7 @@ export function AuditPage() {
   const [next, setNext] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<ApiError | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
 
   const fetchPage = useCallback(
     async (cursor: string | null) => {
@@ -40,50 +46,88 @@ export function AuditPage() {
 
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">Audit log</h1>
+      <PageHeading title="Audit log" subtitle="Every recorded state change. Click a row for details." />
       <Input
         placeholder="Filter by action (e.g. session.enable)"
         value={action}
         onChange={(e) => setAction(e.target.value)}
         className="max-w-sm"
+        aria-label="Filter by action"
       />
       <ErrorNote error={error} />
-      <Card>
+      <Card className="overflow-hidden p-0">
         {loading && !items.length ? (
           <Spinner />
         ) : !items.length ? (
-          <Empty>No audit entries.</Empty>
+          <div className="p-4">
+            <Empty>No audit entries.</Empty>
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-xs text-text-muted">
+            <table className="w-full text-left text-sm" aria-busy={loading}>
+              <thead className="text-xs font-medium uppercase tracking-wide text-text-muted">
                 <tr>
-                  <th className="py-1">Time</th>
-                  <th>Actor</th>
-                  <th>Action</th>
-                  <th>Object</th>
+                  <th className="w-8 px-4 py-2.5" />
+                  <th className="px-4 py-2.5">Time</th>
+                  <th className="px-4 py-2.5">Actor</th>
+                  <th className="px-4 py-2.5">Action</th>
+                  <th className="px-4 py-2.5">Object</th>
                 </tr>
               </thead>
               <tbody>
-                {items.map((a) => (
-                  <tr key={a.id} className="border-t border-border">
-                    <td className="py-1.5 text-xs text-text-muted">{fmtDateTime(a.ts)}</td>
-                    <td className="text-xs">{a.actor}</td>
-                    <td className="font-mono text-xs">{a.action}</td>
-                    <td className="text-xs text-text-muted">
-                      {a.object_type}
-                      {a.object_id ? `/${a.object_id.slice(0, 8)}` : ""}
-                    </td>
-                  </tr>
-                ))}
+                {items.map((a) => {
+                  const isOpen = openId === a.id;
+                  return (
+                    <Fragment key={a.id}>
+                      <tr
+                        onClick={() => setOpenId(isOpen ? null : a.id)}
+                        className="cursor-pointer border-t border-border transition-colors hover:bg-surface-muted"
+                      >
+                        <td className="px-4 py-2.5 text-text-muted">{isOpen ? "▾" : "▸"}</td>
+                        <td className="whitespace-nowrap px-4 py-2.5 text-xs text-text-muted">
+                          {fmtDateTime(a.ts)}
+                        </td>
+                        <td className="px-4 py-2.5 text-xs text-text">{a.actor}</td>
+                        <td className="px-4 py-2.5 font-mono text-xs text-text">{a.action}</td>
+                        <td className="px-4 py-2.5 text-xs text-text-muted">
+                          {a.object_type}
+                          {a.object_id ? `/${a.object_id.slice(0, 8)}` : ""}
+                        </td>
+                      </tr>
+                      {isOpen && (
+                        <tr className="border-t border-border bg-surface-muted/40">
+                          <td colSpan={5} className="px-4 py-3">
+                            <div className="grid gap-3 sm:grid-cols-2">
+                              {(["before", "after"] as const).map((k) => (
+                                <div key={k}>
+                                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-text-muted">
+                                    {k}
+                                  </div>
+                                  <pre className="overflow-x-auto rounded-control border border-border bg-surface p-3 font-mono text-xs text-text">
+                                    {json(a[k])}
+                                  </pre>
+                                </div>
+                              ))}
+                            </div>
+                            {a.request_id && (
+                              <div className="mt-2 text-xs text-text-muted">
+                                request_id: <span className="font-mono">{a.request_id}</span>
+                              </div>
+                            )}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
         {next && (
-          <div className="mt-3 text-center">
+          <div className="border-t border-border p-3 text-center">
             <Button onClick={() => fetchPage(next)} disabled={loading}>
-              Load more
+              {loading ? "Loading…" : "Load more"}
             </Button>
           </div>
         )}

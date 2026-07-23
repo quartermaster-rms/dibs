@@ -1,7 +1,7 @@
 import { NavLink, Navigate, Route, Routes } from "react-router-dom";
 
 import { useAuth } from "./auth";
-import { Button, cx } from "./components/ui";
+import { Badge, Button, IconButton, Spinner, cx } from "./components/ui";
 import { tzLabel } from "./lib/time";
 import { AuditPage } from "./pages/Audit";
 import { EquipmentDetail } from "./pages/EquipmentDetail";
@@ -20,8 +20,11 @@ function NavItem({ to, children }: { to: string; children: React.ReactNode }) {
       end={to === "/"}
       className={({ isActive }) =>
         cx(
-          "rounded-control px-3 py-1.5 text-sm font-medium",
-          isActive ? "bg-brand-soft text-brand" : "text-text-muted hover:bg-surface-muted",
+          "rounded-control px-3 py-1.5 text-sm font-medium transition-colors",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2 focus-visible:ring-offset-surface",
+          isActive
+            ? "bg-brand-soft font-semibold text-brand"
+            : "text-text-muted hover:bg-surface-muted hover:text-text",
         )
       }
     >
@@ -37,7 +40,10 @@ function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-full">
       <header className="sticky top-0 z-40 border-b border-border bg-surface">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-4 py-2">
-          <NavLink to="/" className="mr-2 text-lg font-bold text-brand">
+          <NavLink
+            to="/"
+            className="mr-2 rounded-control text-lg font-bold tracking-tight text-brand focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+          >
             dibs
           </NavLink>
           <nav className="flex flex-1 flex-wrap items-center gap-1">
@@ -50,12 +56,17 @@ function Layout({ children }: { children: React.ReactNode }) {
           <span className="hidden text-xs text-text-muted sm:inline" title="Times shown in this zone">
             {tzLabel()}
           </span>
-          <Button variant="ghost" onClick={toggle} aria-label="Toggle theme">
+          <IconButton
+            onClick={toggle}
+            aria-label="Toggle theme"
+            title={theme === "dark" ? "Switch to light" : "Switch to dark"}
+            className="text-base"
+          >
             {theme === "dark" ? "☀" : "☾"}
-          </Button>
-          <div className="flex items-center gap-2">
+          </IconButton>
+          <div className="flex items-center gap-2 border-l border-border pl-2">
             <span className="text-sm text-text">{me?.display_name}</span>
-            {me?.is_admin && <span className="text-xs text-brand">admin</span>}
+            {me?.is_admin && <Badge tone="brand">admin</Badge>}
             <Button variant="ghost" onClick={() => logout()}>
               Sign out
             </Button>
@@ -69,7 +80,12 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   const { me, loading } = useAuth();
-  if (loading) return <div className="p-8 text-text-muted">Loading…</div>;
+  if (loading)
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <Spinner />
+      </div>
+    );
   if (!me) return <Login />;
   return (
     <Layout>

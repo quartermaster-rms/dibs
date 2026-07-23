@@ -52,8 +52,8 @@ describe("App navigation (capability-aware)", () => {
 
   it("hides Settings + Audit from a plain user", async () => {
     renderWith(<App />, { subject: "u1" }, empty);
-    expect(await screen.findByText("Equipment")).toBeInTheDocument();
-    expect(screen.queryByText("Settings")).not.toBeInTheDocument();
-    expect(screen.queryByText("Audit")).not.toBeInTheDocument();
+    expect(await screen.findByRole("link", { name: "Equipment" })).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Settings" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "Audit" })).not.toBeInTheDocument();
   });
 });

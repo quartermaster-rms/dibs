@@ -11,7 +11,8 @@ export function EnableControl({ row, onChange }: { row: EquipmentRow; onChange: 
   const [err, setErr] = useState<ApiError | null>(null);
 
   // No Enable path on a no-enable item (capability-aware: control absent).
-  if (!row.enable_gated) return <span className="text-xs text-text-muted">No interlock</span>;
+  if (!row.enable_gated)
+    return <span className="inline-flex h-8 items-center text-xs text-text-muted">No interlock</span>;
 
   const call = async (action: "enable" | "disable") => {
     setBusy(true);
@@ -42,7 +43,7 @@ export function EnableControl({ row, onChange }: { row: EquipmentRow; onChange: 
         Force close · {holder.display_name}
       </Button>
     ) : (
-      <span className="text-xs text-text-muted">
+      <span className="inline-flex h-8 items-center gap-1 text-xs text-text-muted">
         In use by {holder.display_name}
         <Help>{helpFor("equipment_in_use")}</Help>
       </span>

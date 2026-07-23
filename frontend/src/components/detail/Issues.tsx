@@ -5,7 +5,20 @@ import { ApiError, api, qs } from "../../api/client";
 import type { EquipmentDetail, IssueSummary, Severity } from "../../api/types";
 import { fmtDateTime } from "../../lib/time";
 import { useAsync } from "../../lib/useAsync";
-import { Badge, Button, Card, Empty, ErrorNote, Field, Input, Modal, Select, Spinner, Textarea } from "../ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CheckboxField,
+  Empty,
+  ErrorNote,
+  Field,
+  Input,
+  Modal,
+  Select,
+  Spinner,
+  Textarea,
+} from "../ui";
 
 function FileIssue({ eq, onDone }: { eq: EquipmentDetail; onDone: () => void }) {
   const [title, setTitle] = useState("");
@@ -61,18 +74,24 @@ export function IssuesSection({ eq, onChange }: { eq: EquipmentDetail; onChange:
 
   return (
     <Card>
-      <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-sm font-semibold">Issues</h3>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+        <h3 className="text-base font-semibold text-text">Issues</h3>
         <Button variant="primary" onClick={() => setFiling(true)}>
           File a new issue
         </Button>
       </div>
-      <div className="mb-2 flex flex-wrap items-center gap-2">
-        <Input placeholder="Search issues…" value={q} onChange={(e) => setQ(e.target.value)} className="max-w-xs" />
-        <label className="flex items-center gap-1.5 text-sm text-text">
-          <input type="checkbox" checked={includeClosed} onChange={(e) => setIncludeClosed(e.target.checked)} />
-          Include closed
-        </label>
+      <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
+        <Input
+          placeholder="Search issues…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="max-w-xs"
+        />
+        <CheckboxField
+          label="Include closed"
+          checked={includeClosed}
+          onChange={(e) => setIncludeClosed(e.target.checked)}
+        />
       </div>
       <ErrorNote error={error} />
       {loading ? (
@@ -82,8 +101,14 @@ export function IssuesSection({ eq, onChange }: { eq: EquipmentDetail; onChange:
       ) : (
         <ul className="divide-y divide-border">
           {data.map((i) => (
-            <li key={i.id} className="flex items-center justify-between py-1.5 text-sm">
-              <Link to={`/issues/${i.id}`} className="flex items-center gap-2 hover:text-brand">
+            <li
+              key={i.id}
+              className="-mx-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-1.5 text-sm transition-colors hover:bg-surface-muted"
+            >
+              <Link
+                to={`/issues/${i.id}`}
+                className="flex items-center gap-2 font-medium text-text transition-colors hover:text-brand"
+              >
                 <Badge tone={i.severity === "fatal" ? "danger" : "warning"}>{i.severity}</Badge>
                 <span>{i.title}</span>
                 {i.status === "closed" && <Badge>closed</Badge>}

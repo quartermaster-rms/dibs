@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import { useAuth } from "../auth";
-import { Button, Card, ErrorNote, Field, Input } from "../components/ui";
+import { Button, ButtonLink, Card, ErrorNote, Field, Input } from "../components/ui";
 
 export function Login() {
   const { config, stubLogin } = useAuth();
@@ -30,9 +30,14 @@ export function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface-muted p-4">
-      <Card className="w-full max-w-sm">
-        <h1 className="mb-1 text-2xl font-bold text-brand">dibs</h1>
-        <p className="mb-4 text-sm text-text-muted">Equipment reservations & interlocks.</p>
+      <Card className="w-full max-w-sm p-6 sm:p-8">
+        <div className="mb-5 text-center">
+          <span className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-card bg-brand-soft text-xl font-bold text-brand">
+            d
+          </span>
+          <h1 className="text-3xl font-bold tracking-tight text-brand">dibs</h1>
+          <p className="mt-1 text-sm text-text-muted">Equipment reservations & interlocks.</p>
+        </div>
         {stub ? (
           <form onSubmit={submit} className="space-y-3">
             <p className="text-xs text-text-muted">Dev sign-in (stub identity).</p>
@@ -48,11 +53,9 @@ export function Login() {
             </Button>
           </form>
         ) : (
-          <a href="/api/auth/login">
-            <Button variant="primary" className="w-full">
-              Sign in with SSO
-            </Button>
-          </a>
+          <ButtonLink href="/api/auth/login" variant="primary" className="w-full">
+            Sign in with SSO
+          </ButtonLink>
         )}
       </Card>
     </div>

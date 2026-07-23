@@ -18,7 +18,7 @@ function QuotaSection({ equipmentId }: { equipmentId: string }) {
     `${w.window}: ${w.remaining_hours ?? "∞"}${w.limit_hours ? ` / ${w.limit_hours}h` : " (unlimited)"}`;
   return (
     <Card>
-      <h3 className="mb-1 text-sm font-semibold">My quota remaining</h3>
+      <h3 className="mb-2 text-base font-semibold text-text">My quota remaining</h3>
       <div className="grid grid-cols-1 gap-1 text-xs text-text-muted sm:grid-cols-2">
         <div>Reserve — {data.reserve.map(line).join(", ")}</div>
         <div>Usage — {data.usage.map(line).join(", ")}</div>
@@ -31,30 +31,35 @@ function HistorySection({ equipmentId }: { equipmentId: string }) {
   const { data } = useAsync(() => api.get<SessionRow[]>(`/equipment/${equipmentId}/history`), [equipmentId]);
   return (
     <Card>
-      <h3 className="mb-2 text-sm font-semibold">Usage history</h3>
+      <h3 className="mb-3 text-base font-semibold text-text">Usage history</h3>
       {!data?.length ? (
         <Empty>No past sessions.</Empty>
       ) : (
-        <table className="w-full text-left text-sm">
-          <thead className="text-xs text-text-muted">
-            <tr>
-              <th className="py-1">Who</th>
-              <th>Start</th>
-              <th>End</th>
-              <th>Ended by</th>
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((s) => (
-              <tr key={s.id} className="border-t border-border">
-                <td className="py-1">{s.display_name}</td>
-                <td>{fmtDateTime(s.started_at)}</td>
-                <td>{fmtDateTime(s.ended_at)}</td>
-                <td>{s.end_cause ?? "—"}</td>
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-sm">
+            <thead className="text-xs font-medium uppercase tracking-wide text-text-muted">
+              <tr className="border-b border-border">
+                <th className="px-2 py-1.5">Who</th>
+                <th className="px-2 py-1.5">Start</th>
+                <th className="px-2 py-1.5">End</th>
+                <th className="px-2 py-1.5">Ended by</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {data.map((s) => (
+                <tr
+                  key={s.id}
+                  className="border-t border-border transition-colors hover:bg-surface-muted"
+                >
+                  <td className="px-2 py-1.5">{s.display_name}</td>
+                  <td className="whitespace-nowrap px-2 py-1.5">{fmtDateTime(s.started_at)}</td>
+                  <td className="whitespace-nowrap px-2 py-1.5">{fmtDateTime(s.ended_at)}</td>
+                  <td className="px-2 py-1.5">{s.end_cause ?? "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </Card>
   );

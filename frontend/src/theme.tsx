@@ -20,6 +20,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
+    // Drives native controls (date/number spinners, select popups, scrollbars,
+    // caret) so they match the theme instead of always rendering light.
+    document.documentElement.style.colorScheme = theme;
     localStorage.setItem("dibs-theme", theme);
   }, [theme]);
 

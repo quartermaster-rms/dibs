@@ -8,6 +8,7 @@ export default {
         brand: "var(--brand)",
         "brand-hover": "var(--brand-hover)",
         "brand-soft": "var(--brand-soft)",
+        "on-brand": "var(--on-brand)",
         surface: "var(--surface)",
         "surface-muted": "var(--surface-muted)",
         text: "var(--text)",

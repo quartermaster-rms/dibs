@@ -79,8 +79,8 @@ export function RosterSection({ eq }: { eq: EquipmentDetail }) {
 
   return (
     <Card>
-      <div className="mb-2 flex items-center gap-2">
-        <h3 className="text-sm font-semibold">Access roster</h3>
+      <div className="mb-3 flex items-center gap-1">
+        <h3 className="text-base font-semibold text-text">Access roster</h3>
         <Help>Everyone at user or superuser tier on this item or its class. Admins have implicit access.</Help>
       </div>
       <Input placeholder="Search people…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-2 max-w-xs" />
@@ -93,8 +93,11 @@ export function RosterSection({ eq }: { eq: EquipmentDetail }) {
       ) : (
         <ul className="divide-y divide-border">
           {data.map((g) => (
-            <li key={g.subject + g.scope_id} className="flex items-center justify-between py-1.5 text-sm">
-              <span className="flex items-center gap-2">
+            <li
+              key={g.subject + g.scope_id}
+              className="-mx-4 flex items-center justify-between gap-2 px-4 py-1.5 text-sm transition-colors hover:bg-surface-muted"
+            >
+              <span className="flex items-center gap-2 text-text">
                 {g.display_name || g.subject}
                 <Badge tone="brand">{g.tier}</Badge>
                 {g.scope_kind === "class" && <Badge>class</Badge>}

@@ -4,9 +4,11 @@
 
 :root,
 [data-theme="light"] {
+  color-scheme: light;
   --brand: #1d4ed8;
   --brand-hover: #1e40af;
   --brand-soft: #eff4ff;
+  --on-brand: #ffffff;
   --surface: #ffffff;
   --surface-muted: #f5f5f4;
   --text: #1c1917;
@@ -18,9 +20,11 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark;
   --brand: #3b82f6;
   --brand-hover: #60a5fa;
   --brand-soft: #172554;
+  --on-brand: #ffffff;
   --surface: #1c1917;
   --surface-muted: #292524;
   --text: #f5f5f4;
@@ -41,5 +45,18 @@ body {
   margin: 0;
   background: var(--surface-muted);
   color: var(--text);
-  font-family: Inter, system-ui, sans-serif;
+  font-family: "Inter Variable", Inter, system-ui, sans-serif;
+  /* Ease the light/dark swap instead of a hard flash. */
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

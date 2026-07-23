@@ -92,7 +92,7 @@ export function ReservationsSection({ eq, onChange }: { eq: EquipmentDetail; onC
   const now = Date.now();
   return (
     <Card>
-      <h3 className="mb-2 text-sm font-semibold">Reservation calendar</h3>
+      <h3 className="mb-3 text-base font-semibold text-text">Reservation calendar</h3>
       <div className="mb-3">
         <BookForm eq={eq} onBooked={() => { reload(); onChange(); }} />
       </div>
@@ -108,7 +108,10 @@ export function ReservationsSection({ eq, onChange }: { eq: EquipmentDetail; onC
             const mine = me && r.user_id === me.subject;
             const cancelable = new Date(r.starts_at).getTime() > now && (mine || me?.is_admin);
             return (
-              <li key={r.id} className="flex items-center justify-between py-1.5 text-sm">
+              <li
+                key={r.id}
+                className="-mx-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 py-1.5 text-sm transition-colors hover:bg-surface-muted"
+              >
                 <span>
                   {fmtDateTime(r.starts_at)} – {fmtDateTime(r.ends_at)}
                   <span className="ml-2 text-xs text-text-muted">
@@ -116,7 +119,7 @@ export function ReservationsSection({ eq, onChange }: { eq: EquipmentDetail; onC
                   </span>
                 </span>
                 {cancelable && (
-                  <Button variant="ghost" onClick={() => cancel(r)}>
+                  <Button variant={mine ? "ghost" : "ghost-danger"} onClick={() => cancel(r)}>
                     {mine ? "Cancel" : "Remove"}
                   </Button>
                 )}
