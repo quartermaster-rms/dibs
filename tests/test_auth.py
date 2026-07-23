@@ -24,7 +24,8 @@ def test_identity_roles():
     assert admin.is_sysadmin and admin.is_admin and not admin.is_app_admin
     app_admin = Identity("a", "Adm", "a@x", ("admin-dibs",))
     assert app_admin.is_app_admin and app_admin.is_admin and not app_admin.is_sysadmin
-    user = Identity("u", "U", "u@x", ("group-eng", "group-hr"))
+    # a non-"group-" role ("staff") exercises the filter's false branch too
+    user = Identity("u", "U", "u@x", ("group-eng", "staff", "group-hr"))
     assert not user.is_admin
     assert user.department_groups == ("group-eng", "group-hr")
 

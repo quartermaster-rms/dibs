@@ -72,7 +72,10 @@ exclude_also = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
     "@(abc\\.)?abstractmethod",
-    "\\.\\.\\.",
+    # Bare `...` stub bodies only. A looser `\.\.\.` also matches lines that
+    # merely contain an ellipsis (e.g. `tuple[str, ...]` in a def signature),
+    # which would silently exclude that whole block from the coverage gate.
+    "^\\s*\\.\\.\\.\\s*$",
 ]
 
 [tool.mypy]
