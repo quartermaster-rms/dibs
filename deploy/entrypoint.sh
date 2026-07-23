@@ -10,10 +10,14 @@ case "$role" in
     exec python -m dibs.schema
     ;;
   api)
+    # Plain HTTP for a TLS-terminating reverse proxy to sit in front of. Trust
+    # that proxy's X-Forwarded-* so the app sees the real scheme/host (https,
+    # OIDC redirect URLs, Secure cookies). The api is internal/loopback-only.
     exec gunicorn dibs.app:app \
       -k uvicorn.workers.UvicornWorker \
       -b 0.0.0.0:8000 \
       -w "${WEB_CONCURRENCY:-2}" \
+      --forwarded-allow-ips '*' \
       --access-logfile - --error-logfile -
     ;;
   worker)
