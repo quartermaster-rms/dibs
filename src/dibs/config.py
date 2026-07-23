@@ -13,6 +13,7 @@ from typing import Literal
 
 from pydantic import Field, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from sqlalchemy import URL
 
 AuthMode = Literal["stub", "oidc"]
 
@@ -21,7 +22,15 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(case_sensitive=False, extra="ignore")
 
     # --- Connections ---
-    database_url: str = Field(default="postgresql+psycopg://dibs:dibs@127.0.0.1:5432/dibs")
+    # The password lives in exactly one place: POSTGRES_PASSWORD. DATABASE_URL is
+    # derived from the POSTGRES_* parts (URL-encoded, so any password is safe)
+    # unless it is set explicitly to point at an external database.
+    database_url: str = ""
+    postgres_user: str = "dibs"
+    postgres_password: str = "dibs"
+    postgres_db: str = "dibs"
+    postgres_host: str = "127.0.0.1"
+    postgres_port: int = 5432
     redis_url: str = Field(default="redis://127.0.0.1:6379/0")
 
     # --- Calendar / locale ---
@@ -69,6 +78,19 @@ class Settings(BaseSettings):
     @property
     def stub_login(self) -> bool:
         return self.auth_mode == "stub"
+
+    @model_validator(mode="after")
+    def _derive_database_url(self) -> Settings:
+        if not self.database_url:
+            self.database_url = URL.create(
+                "postgresql+psycopg",
+                username=self.postgres_user,
+                password=self.postgres_password,
+                host=self.postgres_host,
+                port=self.postgres_port,
+                database=self.postgres_db,
+            ).render_as_string(hide_password=False)
+        return self
 
     @model_validator(mode="after")
     def _check_auth(self) -> Settings:

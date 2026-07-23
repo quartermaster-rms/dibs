@@ -27,11 +27,14 @@ cleanup() {
 trap cleanup EXIT
 
 [ -f "$ENVFILE" ] && { BACKUP="$ENVFILE.bak.$$"; mv "$ENVFILE" "$BACKUP"; }
+# No DATABASE_URL: the app must derive it from the POSTGRES_* parts, and the
+# password carries URL-special characters so a broken URL-encoding would fail
+# authentication (the failure mode that shipped credentials in two places hid).
 cat > "$ENVFILE" <<EOF
 POSTGRES_USER=dibs
-POSTGRES_PASSWORD=dibs
+POSTGRES_PASSWORD=p@ss:w/rd1
 POSTGRES_DB=dibs
-DATABASE_URL=postgresql+psycopg://dibs:dibs@postgres:5432/dibs
+POSTGRES_HOST=postgres
 REDIS_URL=redis://redis:6379/0
 PLATFORM_TZ=America/Los_Angeles
 AUTH_MODE=stub
