@@ -3,7 +3,19 @@ import { useState } from "react";
 import { ApiError, api, qs } from "../../api/client";
 import type { EquipmentDetail, Grant, Tier } from "../../api/types";
 import { useAsync } from "../../lib/useAsync";
-import { Badge, Button, Card, Empty, ErrorNote, Field, Help, Input, Select, Spinner } from "../ui";
+import {
+  Badge,
+  Button,
+  Card,
+  Empty,
+  ErrorNote,
+  Field,
+  Help,
+  Input,
+  SearchInput,
+  Select,
+  Spinner,
+} from "../ui";
 
 function PromotePanel({ eq, onDone }: { eq: EquipmentDetail; onDone: () => void }) {
   const ab = eq.my_abilities;
@@ -83,7 +95,14 @@ export function RosterSection({ eq }: { eq: EquipmentDetail }) {
         <h3 className="text-base font-semibold text-text">Access roster</h3>
         <Help>Everyone at user or superuser tier on this item or its class. Admins have implicit access.</Help>
       </div>
-      <Input placeholder="Search people…" value={q} onChange={(e) => setQ(e.target.value)} className="mb-2 max-w-xs" />
+      <SearchInput
+        placeholder="Search people…"
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        onClear={() => setQ("")}
+        className="mb-2 max-w-xs"
+        aria-label="Search people"
+      />
       <ErrorNote error={error} />
       <ErrorNote error={err} />
       {loading ? (

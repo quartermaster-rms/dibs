@@ -10,8 +10,8 @@ import {
   CheckboxField,
   Empty,
   ErrorNote,
-  Input,
   PageHeading,
+  SearchInput,
   Spinner,
   StatusDot,
 } from "../components/ui";
@@ -67,11 +67,12 @@ export function EquipmentList() {
     <div className="space-y-4">
       <PageHeading title="Equipment" subtitle={data ? `${data.length} shown` : undefined} />
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Input
+        <SearchInput
           placeholder="Search equipment, class, or location…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          className="max-w-sm"
+          onClear={() => setQ("")}
+          className="w-full max-w-sm"
           aria-label="Search equipment"
         />
         <CheckboxField

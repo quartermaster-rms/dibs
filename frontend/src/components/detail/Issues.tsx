@@ -15,6 +15,7 @@ import {
   Field,
   Input,
   Modal,
+  SearchInput,
   Select,
   Spinner,
   Textarea,
@@ -81,11 +82,13 @@ export function IssuesSection({ eq, onChange }: { eq: EquipmentDetail; onChange:
         </Button>
       </div>
       <div className="mb-2 flex flex-wrap items-center gap-x-4 gap-y-2">
-        <Input
+        <SearchInput
           placeholder="Search issues…"
           value={q}
           onChange={(e) => setQ(e.target.value)}
+          onClear={() => setQ("")}
           className="max-w-xs"
+          aria-label="Search issues"
         />
         <CheckboxField
           label="Include closed"

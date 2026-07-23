@@ -2,7 +2,7 @@ import { Fragment, useCallback, useEffect, useState } from "react";
 
 import { ApiError, api, qs } from "../api/client";
 import type { AuditEntry } from "../api/types";
-import { Button, Card, Empty, ErrorNote, Input, PageHeading, Spinner } from "../components/ui";
+import { Button, Card, Empty, ErrorNote, PageHeading, SearchInput, Spinner } from "../components/ui";
 import { fmtDateTime } from "../lib/time";
 
 interface Page {
@@ -47,10 +47,11 @@ export function AuditPage() {
   return (
     <div className="space-y-4">
       <PageHeading title="Audit log" subtitle="Every recorded state change. Click a row for details." />
-      <Input
+      <SearchInput
         placeholder="Filter by action (e.g. session.enable)"
         value={action}
         onChange={(e) => setAction(e.target.value)}
+        onClear={() => setAction("")}
         className="max-w-sm"
         aria-label="Filter by action"
       />

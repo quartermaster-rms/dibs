@@ -206,6 +206,51 @@ export function Select({ className, children, ...props }: React.SelectHTMLAttrib
   );
 }
 
+/** A pill-shaped search field with a leading icon and a clear button. */
+export function SearchInput({
+  className,
+  value,
+  onClear,
+  ...props
+}: InputHTMLAttributes<HTMLInputElement> & { onClear?: () => void }) {
+  const hasValue = value != null && value !== "";
+  return (
+    <div className={cx("relative", className)}>
+      <svg
+        aria-hidden="true"
+        className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+        viewBox="0 0 20 20"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+      >
+        <circle cx="9" cy="9" r="6" />
+        <path d="M14 14l3.5 3.5" strokeLinecap="round" />
+      </svg>
+      <input
+        type="text"
+        value={value}
+        className={cx(
+          "w-full rounded-full border border-border bg-surface-muted py-1.5 pl-9 pr-9 text-sm text-text",
+          "placeholder:text-text-muted transition-colors outline-none",
+          "hover:border-text-muted focus:border-brand focus:bg-surface focus:ring-2 focus:ring-brand/40",
+        )}
+        {...props}
+      />
+      {hasValue && onClear && (
+        <button
+          type="button"
+          aria-label="Clear search"
+          onClick={onClear}
+          className="absolute right-2 top-1/2 inline-flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface hover:text-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand"
+        >
+          ✕
+        </button>
+      )}
+    </div>
+  );
+}
+
 export function Checkbox({ className, ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
