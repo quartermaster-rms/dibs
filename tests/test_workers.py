@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import uuid
 from datetime import UTC, datetime, timedelta
 
 from tests.factories import (
@@ -11,14 +10,12 @@ from tests.factories import (
     make_session,
 )
 
-from dibs.config import Settings
 from dibs.db import get_sessionmaker
 from dibs.enums import ReservationStatus, Severity
 from dibs.models import Principal
 from dibs.services.notifications import list_for
 from dibs.services.settings import set_setting
 from dibs.workers import scheduler, tasks, worker
-from dibs.workers.mqtt import MqttPublisher
 
 
 async def _admin(db_session, subject="admin1"):
@@ -73,55 +70,11 @@ async def test_daily_digest(db_session):
     assert any("Daily digest" in n["body"] for n in await list_for(db_session, "admin1"))
 
 
-def test_mqtt_dormant():
-    pub = MqttPublisher(Settings(auth_mode="stub"))
-    assert pub.enabled is False
-    pub.publish_state(uuid.uuid4(), True)  # no-op
-
-
-def test_mqtt_publish_payload():
-    pub = MqttPublisher(Settings(auth_mode="stub", mqtt_url="mqtts://broker:8883"))
-    assert pub.enabled is True
-
-    class Fake:
-        def __init__(self):
-            self.calls = []
-
-        def publish(self, topic, payload, qos, retain):
-            self.calls.append((topic, payload))
-
-    pub._client = Fake()
-    nid = uuid.uuid4()
-    pub.publish_state(nid, True)
-    assert pub._client.calls[0][0] == f"dibs/nodes/{nid}/desired"
-    assert '"enabled": true' in pub._client.calls[0][1]
-
-
 async def test_worker_run_once(db_session):
     eq = await make_equipment(db_session)
     await make_node(db_session, eq.id)
     await db_session.commit()
-    await worker.run_once(get_sessionmaker(), MqttPublisher(Settings(auth_mode="stub")))
-
-
-async def test_worker_publishes_desired_states(db_session):
-    eq = await make_equipment(db_session)
-    await make_node(db_session, eq.id)
-    await make_session(db_session, eq.id, "u", datetime.now(UTC))
-    await db_session.commit()
-    pub = MqttPublisher(Settings(auth_mode="stub", mqtt_url="mqtts://b:8883"))
-
-    class Fake:
-        def __init__(self):
-            self.calls = []
-
-        def publish(self, topic, payload, qos, retain):
-            self.calls.append((topic, payload))
-
-    pub._client = Fake()
-    async with get_sessionmaker()() as session:
-        await worker.publish_desired_states(session, pub)
-    assert len(pub._client.calls) == 1 and '"enabled": true' in pub._client.calls[0][1]
+    await worker.run_once(get_sessionmaker())
 
 
 async def test_scheduler_run_once(db_session):

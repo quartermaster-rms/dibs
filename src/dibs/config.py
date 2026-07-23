@@ -55,11 +55,6 @@ class Settings(BaseSettings):
     device_tls_key: str | None = None
     device_rate_limit_per_minute: int = 120
 
-    # --- Optional MQTT state publisher (dormant until configured) ---
-    mqtt_url: str | None = None
-    mqtt_tls_ca: str | None = None
-    mqtt_topic_prefix: str = "dibs/nodes"
-
     # --- Observability ---
     log_level: str = "INFO"
     service_name: str = "dibs"

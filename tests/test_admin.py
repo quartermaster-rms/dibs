@@ -53,7 +53,10 @@ async def test_analytics(client, db_session, login):
     await make_session(db_session, eq.id, "u-1", now - timedelta(hours=2), now - timedelta(hours=1))
     await db_session.commit()
     await login(subject="admin", groups=("admin-dibs",))
-    data = (await client.get("/api/analytics/utilization")).json()
+    # Bound the window explicitly so the check is independent of wall-clock/day edges.
+    frm = (now - timedelta(hours=3)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    to = (now + timedelta(hours=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    data = (await client.get(f"/api/analytics/utilization?from={frm}&to={to}")).json()
     entry = next(e for e in data["equipment"] if e["equipment_id"] == str(eq.id))
     assert entry["used_hours"] == 1.0 and entry["session_count"] == 1
     await login(subject="user")
