@@ -1,6 +1,23 @@
 from __future__ import annotations
 
-from tests.factories import make_equipment
+from tests.factories import make_class, make_equipment, make_node
+
+
+async def test_class_reassignment_to_no_enable_blocked_while_node_linked(client, db_session, login):
+    gated = await make_class(db_session, name="Gated-A", requires_enable=True)
+    other_gated = await make_class(db_session, name="Gated-B", requires_enable=True)
+    no_enable = await make_class(db_session, name="NoEnable-A", requires_enable=False)
+    eq = await make_equipment(db_session, klass=gated, requires_enable=True)
+    await make_node(db_session, eq.id)  # only allowed because eq is enable-gated
+    await db_session.commit()
+    await login(subject="admin", groups=("admin-dibs",))
+    # moving the node-carrying item to a no-enable class would strand the node
+    # on a non-enable-gated item -> rejected by the keep-gated trigger (422)
+    r = await client.patch(f"/api/equipment/{eq.id}", json={"class_id": str(no_enable.id)})
+    assert r.status_code == 422
+    # moving to another enable-gated class keeps the invariant and is allowed
+    r = await client.patch(f"/api/equipment/{eq.id}", json={"class_id": str(other_gated.id)})
+    assert r.status_code == 200
 
 
 async def test_provision_rotate_patch_delete(client, db_session, login):

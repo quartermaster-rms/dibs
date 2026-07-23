@@ -71,8 +71,10 @@ echo ">> runs non-root"
 uid="$(compose exec -T api id -u | tr -d '\r')"
 [ "$uid" = 10001 ] || fail "api not non-root (uid=$uid)"
 
-echo ">> migrations applied"
-compose exec -T api alembic current 2>&1 | grep -q 0001 || fail "migrations not at head"
+echo ">> migrations applied (at head)"
+head_rev="$(compose exec -T api alembic heads 2>/dev/null | tr -d '\r' | grep -oiE '^[0-9a-f]+' | head -1)"
+compose exec -T api alembic current 2>&1 | tr -d '\r' | grep -q "${head_rev:-__no_head__}" \
+  || fail "migrations not at head (head=$head_rev)"
 
 echo ">> api plane"
 curl -fsS "$API/healthz" | grep -q '"status": *"ok"' || fail "healthz"
