@@ -310,8 +310,13 @@ async def get_equipment(session: AsyncSession, identity: Identity, equipment_id:
     )
     detail["class"] = class_dict(cls)
     from .grants import caller_abilities
+    from .issues import list_for_equipment as _issue_list
+    from .reservations import list_for_equipment as _reservation_list
 
     detail["my_abilities"] = await caller_abilities(session, identity, equipment.id, cls.id)
+    # SPEC: the detail response carries the full issue and reservation data.
+    detail["issues"] = await _issue_list(session, identity, equipment.id, True, None, None)
+    detail["reservations"] = await _reservation_list(session, identity, equipment.id, None, None)
     return detail
 
 

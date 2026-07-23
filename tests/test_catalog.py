@@ -104,3 +104,23 @@ async def test_delete_guard(client, login):
     # delete equipment first, then class
     assert (await client.delete(f"/api/equipment/{eq['id']}")).status_code == 204
     assert (await client.delete(f"/api/classes/{cls['id']}")).status_code == 204
+
+
+async def test_equipment_detail_embeds_issues_and_reservations(client, db_session, login):
+    from datetime import UTC, datetime, timedelta
+
+    from tests.factories import make_equipment, make_issue, make_reservation
+
+    from dibs.enums import Severity
+
+    eq = await make_equipment(db_session)
+    await make_issue(db_session, eq.id, severity=Severity.WARNING, title="Wobbly")
+    now = datetime.now(UTC)
+    await make_reservation(
+        db_session, eq.id, "u", now + timedelta(days=1), now + timedelta(days=1, hours=1)
+    )
+    await db_session.commit()
+    await login(subject="viewer")
+    detail = (await client.get(f"/api/equipment/{eq.id}")).json()
+    assert any(i["title"] == "Wobbly" for i in detail["issues"])
+    assert len(detail["reservations"]) == 1
