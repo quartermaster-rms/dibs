@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
+from freezegun import freeze_time
 from tests.factories import (
     make_equipment,
     make_grant,
@@ -80,6 +81,12 @@ async def test_fatal_blocks_user_admits_admin(client, db_session, login):
     assert (await client.post(f"/api/equipment/{eq.id}/enable")).status_code == 201
 
 
+# Frozen mid-afternoon UTC (= mid-morning in the default PLATFORM_TZ) so the prior
+# session sits wholly inside the current day window regardless of when CI runs.
+# The usage-quota day window is boundary-aligned in PLATFORM_TZ, so a session
+# placed relative to a real "now" near the local midnight would otherwise be
+# clipped and under-count.
+@freeze_time("2026-07-23 20:00:00")
 async def test_usage_quota_blocks_enable(client, db_session, login):
     eq = await make_equipment(db_session)
     await make_grant(db_session, "u-1", ScopeKind.ITEM, eq.id, Tier.USER)
