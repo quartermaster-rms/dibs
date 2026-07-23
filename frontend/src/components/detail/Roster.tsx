@@ -99,7 +99,7 @@ export function RosterSection({ eq }: { eq: EquipmentDetail }) {
                 <Badge tone="brand">{g.tier}</Badge>
                 {g.scope_kind === "class" && <Badge>class</Badge>}
               </span>
-              {ab.can_demote && (
+              {g.demotable && (
                 <Button variant="ghost" onClick={() => demote(g)}>
                   Demote
                 </Button>

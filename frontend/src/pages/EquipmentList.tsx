@@ -25,14 +25,12 @@ function Row({ row, onChange }: { row: EquipmentRow; onChange: () => void }) {
       <Badge tone={row.is_admin ? "brand" : tierTone[row.effective_tier]}>
         {row.is_admin ? "admin" : row.effective_tier}
       </Badge>
-      <div className="min-w-[9rem] text-xs text-text-muted">
-        {row.current_holder ? (
-          <span className="text-warning">In use · {row.current_holder.display_name}</span>
-        ) : row.next_reservation ? (
-          <span>Next: {fmtDateTime(row.next_reservation.starts_at)}</span>
-        ) : (
-          <span>Free</span>
+      <div className="min-w-[9rem] space-y-0.5 text-xs text-text-muted">
+        {row.current_holder && (
+          <div className="text-warning">In use · {row.current_holder.display_name}</div>
         )}
+        {row.next_reservation && <div>Next: {fmtDateTime(row.next_reservation.starts_at)}</div>}
+        {!row.current_holder && !row.next_reservation && <div>Free</div>}
       </div>
       <EnableControl row={row} onChange={onChange} />
     </Card>

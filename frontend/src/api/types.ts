@@ -77,6 +77,8 @@ export interface Abilities {
 export interface EquipmentDetail extends EquipmentRow {
   class: EquipmentClass;
   my_abilities: Abilities;
+  issues: IssueSummary[];
+  reservations: Reservation[];
 }
 
 export interface Reservation {
@@ -138,6 +140,8 @@ export interface Grant {
   can_grant_superuser: boolean;
   can_demote: boolean;
   granted_by: string;
+  // whether THIS caller may demote this grant to none (roster responses only)
+  demotable?: boolean;
 }
 
 export interface Person {
