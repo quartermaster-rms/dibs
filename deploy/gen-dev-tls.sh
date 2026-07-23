@@ -24,4 +24,7 @@ CNF
 openssl req -x509 -newkey rsa:2048 -nodes -days 825 \
   -keyout "$DIR/device.key" -out "$DIR/device.crt" -config "$CFG"
 rm -f "$CFG"
+# The device container runs non-root (uid 10001) and reads these over a bind
+# mount; make them world-readable so it can load the key (dev self-signed cert).
+chmod 644 "$DIR/device.crt" "$DIR/device.key"
 echo "wrote $DIR/device.crt and $DIR/device.key"
